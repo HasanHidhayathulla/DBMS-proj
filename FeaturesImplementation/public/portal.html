@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hotel Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+        }
+        .portal-selector {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 400px;
+        }
+        .portal-selector h1 {
+            color: #333;
+            margin: 0 0 30px 0;
+        }
+        .portal-selector a {
+            display: block;
+            padding: 15px;
+            margin: 10px 0;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .portal-selector a:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .portal-selector .admin-link {
+            background: #ff9500;
+        }
+        .portal-selector .admin-link:hover {
+            background: #e68900;
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-selector">
+        <h1>🏨 Hotel Management</h1>
+        <a href="/customer.html">👥 Customer Portal - Book Now</a>
+        <a class="admin-link" href="/index.html">⚙️ Admin Portal</a>
+    </div>
+</body>
+</html>

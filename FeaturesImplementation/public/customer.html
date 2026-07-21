@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Hotel Room - Online Booking System</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Customer Portal Styles */
+        .customer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .customer-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .customer-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+
+        .customer-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .customer-nav {
+            background: #f8f9fa;
+            border-bottom: 2px solid #ddd;
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .customer-nav button {
+            padding: 10px 20px;
+            border: none;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: 2px solid #ddd;
+        }
+
+        .customer-nav button:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .customer-nav button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .customer-content {
+            padding: 30px 20px;
+            background: white;
+        }
+
+        .customer-tab {
+            display: none;
+        }
+
+        .customer-tab.active {
+            display: block;
+        }
+
+        .search-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .search-box input,
+        .search-box select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .search-box button {
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .search-box button:hover {
+            background: #5568d3;
+        }
+
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .room-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .room-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3em;
+        }
+
+        .room-info {
+            padding: 15px;
+        }
+
+        .room-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .room-details {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .room-amenities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .amenity-tag {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .room-pricing {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .price {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .book-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .book-btn:hover {
+            background: #5568d3;
+        }
+
+        .book-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .booking-form {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .booking-summary {
+            background: white;
+            border: 2px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .summary-row.total {
+            border-bottom: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #667eea;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #667eea;
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .payment-option {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .payment-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .payment-option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .payment-form {
+            display: none;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .payment-form.show {
+            display: block;
+        }
+
+        .reservations-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .reservation-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .reservation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .confirmation-number {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-badge.confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .reservation-details {
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .view-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .view-btn:hover {
+            background: #5568d3;
+        }
+
+        .cancel-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #c82333;
+        }
+
+        .cancel-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .search-box {
+                grid-template-columns: 1fr;
+            }
+
+            .rooms-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .payment-methods {
+                grid-template-columns: 1fr;
+            }
+
+            .customer-header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="customer-container">
+        <!-- Header -->
+        <div class="customer-header">
+            <h1>🏨 Hotel Online Booking</h1>
+            <p>Book your perfect room online</p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="customer-nav">
+            <button class="nav-btn active" onclick="switchCustomerTab('browse')">Browse Rooms</button>
+            <button class="nav-btn" onclick="switchCustomerTab('mybookings')">My Bookings</button>
+            <button class="nav-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Messages -->
+        <div id="message" class="message"></div>
+
+        <!-- Main Content -->
+        <div class="customer-content">
+
+            <!-- BROWSE ROOMS TAB -->
+            <div id="browse" class="customer-tab active">
+                <h2>Find Available Rooms</h2>
+                
+                <div class="search-box">
+                    <div>
+                        <label>Check-in Date</label>
+                        <input type="date" id="searchCheckIn" required>
+                    </div>
+                    <div>
+                        <label>Check-out Date</label>
+                        <input type="date" id="searchCheckOut" required>
+                    </div>
+                    <div>
+                        <label>Room Type</label>
+                        <select id="searchRoomType">
+                            <option value="">All Types</option>
+                            <option value="Single">Single</option>
+                            <option value="Double">Double</option>
+                            <option value="Suite">Suite</option>
+                            <option value="Deluxe">Deluxe</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="searchRooms()" style="margin-top: 24px;">Search Rooms</button>
+                    </div>
+                </div>
+
+                <div id="roomsList" class="rooms-grid"></div>
+            </div>
+
+            <!-- MY BOOKINGS TAB -->
+            <div id="mybookings" class="customer-tab">
+                <h2>My Bookings</h2>
+                <button onclick="loadMyBookings()" class="btn btn-primary" style="margin-bottom: 20px;">Refresh</button>
+                <div id="bookingsList" class="reservations-list"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- BOOKING MODAL -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeBookingModal()">&times;</span>
+            <div class="modal-header">Book This Room</div>
+            
+            <form onsubmit="submitBooking(event)">
+                <div class="form-group">
+                    <label>Room Type</label>
+                    <input type="text" id="bookingRoomType" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Check-in Date</label>
+                    <input type="date" id="bookingCheckIn" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Check-out Date</label>
+                    <input type="date" id="bookingCheckOut" required>
+                </div>
+
+                <div class="booking-summary">
+                    <div class="summary-row">
+                        <span>Room Price/Night:</span>
+                        <span id="pricePerNight">$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Number of Nights:</span>
+                        <span id="numberOfNights">0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Tax (8%):</span>
+                        <span id="taxAmount">$0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="totalPrice">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="bookingName" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="bookingEmail" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="bookingPhone" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <div class="payment-methods">
+                        <div class="payment-option" onclick="selectPaymentMethod('online')" id="option-online">
+                            💳 Online Payment
+                        </div>
+                        <div class="payment-option" onclick="selectPaymentMethod('cash')" id="option-cash">
+                            💵 Cash at Hotel
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Online Payment Form -->
+                <div id="onlinePaymentForm" class="payment-form">
+                    <h4>Card Details</h4>
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Expiry Date</label>
+                            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="text" id="cardCVV" placeholder="123" maxlength="3">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Cardholder Name</label>
+                        <input type="text" id="cardName">
+                    </div>
+                </div>
+
+                <button type="submit" class="book-btn">Complete Booking</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CANCELLATION MODAL -->
+    <div id="cancellationModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeCancellationModal()">&times;</span>
+            <div class="modal-header">Cancel Reservation</div>
+            
+            <p id="cancellationMessage"></p>
+            <div id="refundInfo" style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;"></div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="confirmCancellation()" class="btn btn-danger" style="flex: 1;">Yes, Cancel Booking</button>
+                <button onclick="closeCancellationModal()" class="btn" style="flex: 1; background: #ccc;">No, Keep Booking</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="customer.js"></script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Management System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🏨 Hotel Management System</h1>
+            <p>Manage rooms, reservations, payments, and more</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navbar">
+            <button class="nav-btn" onclick="switchTab('login')">Login</button>
+            <button class="nav-btn auth-required" onclick="switchTab('dashboard')" style="display:none;">Dashboard</button>
+            <button class="nav-btn" onclick="switchTab('inventory')">Inventory</button>
+            <button class="nav-btn" onclick="switchTab('reservations')">Reservations</button>
+            <button class="nav-btn" onclick="switchTab('payments')">Payments</button>
+            <button class="nav-btn" onclick="switchTab('check-in-out')">Check-In/Out</button>
+            <button class="nav-btn" onclick="switchTab('billing')">Billing</button>
+            <button class="nav-btn" onclick="switchTab('reporting')">Reports</button>
+            <button class="nav-btn" onclick="switchTab('security')">Security</button>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+                <span id="user-display" style="color: #fff; display: none;"></span>
+                <button id="logout-btn" class="nav-btn" onclick="logoutUser()" style="display: none; background-color: #ff6b6b;">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+
+            <!-- LOGIN TAB -->
+            <div id="login" class="tab-content">
+                <h2>User Login</h2>
+                <div class="form-section" style="max-width: 400px; margin: 0 auto;">
+                    <h3>Sign In to Your Account</h3>
+                    <form onsubmit="loginUser(event)">
+                        <input type="text" id="loginUsername" placeholder="Username" required>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                        <button type="submit" class="btn btn-success">Login</button>
+                    </form>
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+                    <p style="text-align: center; color: #666; font-size: 14px;">
+                        <strong>Demo Credentials:</strong><br>
+                        Admin: admin / Admin@123<br>
+                        Manager: manager / Manager@123<br>
+                        Staff: staff / Staff@123
+                    </p>
+                </div>
+            </div>
+
+            <!-- DASHBOARD TAB -->
+            <div id="dashboard" class="tab-content">
+                <h2>Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>Occupancy Status</h3>
+                        <div id="occupancy-data">Loading...</div>
+                        <button onclick="loadOccupancy()" class="btn btn-primary">Refresh</button>
+                    </div>
+                    <div class="card">
+                        <h3>Revenue Today</h3>
+                        <div id="revenue-data">Loading...</div>
+                        <button onclick="loadRevenue()" class="btn btn-primary">Refresh</button>
+                    </div>
+                    <div class="card">
+                        <h3>Total Rooms</h3>
+                        <div id="total-rooms">Loading...</div>
+                        <button onclick="loadRooms()" class="btn btn-primary">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INVENTORY TAB -->
+            <div id="inventory" class="tab-content">
+                <h2>Room Inventory Management</h2>
+                <div class="form-section">
+                    <h3>Add New Room</h3>
+                    <form onsubmit="addRoom(event)">
+                        <input type="text" id="roomType" placeholder="Room Type (e.g., Single, Double)" required>
+                        <input type="number" id="roomFloor" placeholder="Floor Number" required>
+                        <input type="number" id="roomRate" placeholder="Base Rate ($)" step="0.01" required>
+                        <button type="submit" class="btn btn-success">Add Room</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Room List</h3>
+                    <button onclick="loadRooms()" class="btn btn-primary">Load Rooms</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Floor</th>
+                                <th>Base Rate</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rooms-list"></tbody>
+                    </table>
+                </div>
+
+                <div class="form-section">
+                    <h3>Pricing & Tax Settings</h3>
+                    <form onsubmit="calculatePrice(event)">
+                        <input type="number" id="baseRate" placeholder="Base Rate ($)" step="0.01" required>
+                        <input type="number" id="taxRate" placeholder="Tax Rate (%)" step="0.01" required>
+                        <button type="submit" class="btn btn-primary">Calculate Price</button>
+                    </form>
+                    <div id="pricing-result"></div>
+                </div>
+            </div>
+
+            <!-- RESERVATIONS TAB -->
+            <div id="reservations" class="tab-content">
+                <h2>Reservation Management</h2>
+                <div class="form-section">
+                    <h3>Search Available Rooms</h3>
+                    <form onsubmit="searchAvailableRooms(event)">
+                        <input type="date" id="checkInDate" required>
+                        <input type="date" id="checkOutDate" required>
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </form>
+                    <div id="available-rooms-result"></div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Create Reservation</h3>
+                    <form onsubmit="createReservation(event)">
+                        <input type="number" id="reservationRoomId" placeholder="Room ID" required>
+                        <input type="number" id="reservationUserId" placeholder="User ID" required>
+                        <input type="date" id="reservationCheckIn" required>
+                        <input type="date" id="reservationCheckOut" required>
+                        <button type="submit" class="btn btn-success">Create Reservation</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Reservations</h3>
+                    <button onclick="loadReservations()" class="btn btn-primary">Load Reservations</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Room ID</th>
+                                <th>User ID</th>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservations-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PAYMENTS TAB -->
+            <div id="payments" class="tab-content">
+                <h2>Payment Processing</h2>
+                <div class="form-section">
+                    <h3>Process Payment</h3>
+                    <form onsubmit="processPayment(event)">
+                        <input type="number" id="paymentReservationId" placeholder="Reservation ID" required>
+                        <input type="number" id="paymentAmount" placeholder="Amount ($)" step="0.01" required>
+                        <button type="submit" class="btn btn-success">Process Payment</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Authorize Payment</h3>
+                    <form onsubmit="authorizePayment(event)">
+                        <input type="number" id="authorizeReservationId" placeholder="Reservation ID" required>
+                        <input type="number" id="authorizeAmount" placeholder="Amount ($)" step="0.01" required>
+                        <button type="submit" class="btn btn-primary">Authorize</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Process Refund</h3>
+                    <form onsubmit="processRefund(event)">
+                        <input type="number" id="refundPaymentId" placeholder="Payment ID" required>
+                        <input type="number" id="refundAmount" placeholder="Refund Amount ($)" step="0.01" required>
+                        <button type="submit" class="btn btn-danger">Refund</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- CHECK-IN/OUT TAB -->
+            <div id="check-in-out" class="tab-content">
+                <h2>Check-In / Check-Out Management</h2>
+                <div class="form-section">
+                    <h3>Guest Check-In</h3>
+                    <form onsubmit="checkIn(event)">
+                        <input type="number" id="checkInRoomId" placeholder="Room ID" required>
+                        <input type="number" id="checkInReservationId" placeholder="Reservation ID" required>
+                        <button type="submit" class="btn btn-success">Check-In</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Guest Check-Out</h3>
+                    <form onsubmit="checkOut(event)">
+                        <input type="number" id="checkOutRoomId" placeholder="Room ID" required>
+                        <button type="submit" class="btn btn-warning">Check-Out</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Post Charge</h3>
+                    <form onsubmit="postCharge(event)">
+                        <input type="number" id="chargeReservationId" placeholder="Reservation ID" required>
+                        <input type="text" id="chargeDescription" placeholder="Charge Description" required>
+                        <input type="number" id="chargeAmount" placeholder="Amount ($)" step="0.01" required>
+                        <button type="submit" class="btn btn-primary">Post Charge</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- BILLING TAB -->
+            <div id="billing" class="tab-content">
+                <h2>Billing & Invoicing</h2>
+                <div class="form-section">
+                    <h3>Calculate Billing</h3>
+                    <form onsubmit="calculateBilling(event)">
+                        <input type="number" id="billingSubtotal" placeholder="Subtotal ($)" step="0.01" required>
+                        <input type="number" id="billingTaxRate" placeholder="Tax Rate (%)" step="0.01" required>
+                        <button type="submit" class="btn btn-primary">Calculate</button>
+                    </form>
+                    <div id="billing-result"></div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Generate Invoice</h3>
+                    <form onsubmit="generateInvoice(event)">
+                        <input type="number" id="invoiceReservationId" placeholder="Reservation ID" required>
+                        <input type="number" id="invoiceTotalAmount" placeholder="Total Amount ($)" step="0.01" required>
+                        <input type="number" id="invoiceTax" placeholder="Tax ($)" step="0.01" required>
+                        <button type="submit" class="btn btn-success">Generate Invoice</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- REPORTING TAB -->
+            <div id="reporting" class="tab-content">
+                <h2>Reports & Analytics</h2>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>Occupancy Dashboard</h3>
+                        <button onclick="loadOccupancy()" class="btn btn-primary">View Dashboard</button>
+                        <div id="occupancy-report"></div>
+                    </div>
+                    <div class="card">
+                        <h3>Revenue Report</h3>
+                        <form onsubmit="loadRevenueReport(event)">
+                            <select id="revenueTimeframe">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </form>
+                        <div id="revenue-report"></div>
+                    </div>
+                    <div class="card">
+                        <h3>Audit Logs</h3>
+                        <button onclick="viewAuditLogs()" class="btn btn-primary">View Logs</button>
+                        <div id="audit-logs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECURITY TAB -->
+            <div id="security" class="tab-content">
+                <h2>System Security & Infrastructure</h2>
+                <div class="form-section">
+                    <h3>User Authentication</h3>
+                    <form onsubmit="loginUser(event)">
+                        <input type="text" id="loginUsername" placeholder="Username" required>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Backup & Recovery</h3>
+                    <div class="button-group">
+                        <button onclick="performDailyBackup()" class="btn btn-primary">Perform Daily Backup</button>
+                        <button onclick="performWeeklySnapshot()" class="btn btn-primary">Perform Weekly Snapshot</button>
+                        <button onclick="testDatabaseRecovery()" class="btn btn-warning">Test Database Recovery</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Result Display Area -->
+        <div id="result-message" class="result-message"></div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
