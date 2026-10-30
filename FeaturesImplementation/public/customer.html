@@ -6,7 +6,6 @@
     <title>Book Your Hotel Room - Online Booking System</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Customer Portal Styles */
         .customer-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -206,11 +205,6 @@
             background: #5568d3;
         }
 
-        .book-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
         .booking-form {
             background: #f8f9fa;
             padding: 30px;
@@ -230,7 +224,8 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -407,15 +402,6 @@
             color: white;
         }
 
-        .cancel-btn:hover {
-            background: #c82333;
-        }
-
-        .cancel-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
         .modal {
             display: none;
             position: fixed;
@@ -456,10 +442,6 @@
             color: #666;
         }
 
-        .modal-close:hover {
-            color: #333;
-        }
-
         .message {
             padding: 15px;
             border-radius: 5px;
@@ -488,26 +470,6 @@
             display: block;
         }
 
-        .loader {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         @media (max-width: 768px) {
             .search-box {
                 grid-template-columns: 1fr;
@@ -519,10 +481,6 @@
 
             .payment-methods {
                 grid-template-columns: 1fr;
-            }
-
-            .customer-header h1 {
-                font-size: 1.8em;
             }
         }
     </style>
@@ -539,6 +497,7 @@
         <div class="customer-nav">
             <button class="nav-btn active" onclick="switchCustomerTab('browse')">Browse Rooms</button>
             <button class="nav-btn" onclick="switchCustomerTab('mybookings')">My Bookings</button>
+            <button class="nav-btn" onclick="switchCustomerTab('services-reviews')">Add-ons & Reviews</button>
             <button class="nav-btn" onclick="logout()">Logout</button>
         </div>
 
@@ -582,8 +541,72 @@
             <!-- MY BOOKINGS TAB -->
             <div id="mybookings" class="customer-tab">
                 <h2>My Bookings</h2>
-                <button onclick="loadMyBookings()" class="btn btn-primary" style="margin-bottom: 20px;">Refresh</button>
+                <button onclick="loadMyBookings()" class="btn btn-primary" style="margin-bottom: 20px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh</button>
                 <div id="bookingsList" class="reservations-list"></div>
+            </div>
+
+            <!-- SERVICES & REVIEWS TAB (FEATURE 8) -->
+            <div id="services-reviews" class="customer-tab">
+                <h2>Add-on Services & Post-Stay Reviews</h2>
+
+                <!-- Request Special Service / Add-on -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                    <h3>Request Special Service / Add-on</h3>
+                    <form onsubmit="submitCustomerServiceRequest(event)">
+                        <div class="form-group">
+                            <label>Confirmation Number</label>
+                            <input type="text" id="serviceConfNumber" placeholder="e.g., BOOK12345678" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Service Type</label>
+                            <select id="serviceTypeSelect" required>
+                                <option value="Airport Transfer">Airport Transfer ($40)</option>
+                                <option value="Extra Bed">Extra Bed ($30)</option>
+                                <option value="Late Check-Out">Late Check-Out Request ($25)</option>
+                                <option value="Breakfast Package">Breakfast Package ($15)</option>
+                                <option value="Special Request">Special Request / Custom</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Details / Special Instructions</label>
+                            <input type="text" id="serviceDetails" placeholder="e.g. Flight # or Dietary Preferences">
+                        </div>
+                        <button type="submit" class="book-btn" style="max-width: 250px;">Request Add-on</button>
+                    </form>
+                </div>
+
+                <!-- Submit Post-Stay Rating & Feedback -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                    <h3>Submit Guest Feedback & Review</h3>
+                    <form onsubmit="submitCustomerReview(event)">
+                        <div class="form-group">
+                            <label>Confirmation Number</label>
+                            <input type="text" id="reviewConfNumber" placeholder="e.g., BOOK12345678" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Star Rating</label>
+                            <select id="reviewRatingSelect" required>
+                                <option value="5">⭐⭐⭐⭐⭐ 5 Stars - Excellent</option>
+                                <option value="4">⭐⭐⭐⭐ 4 Stars - Very Good</option>
+                                <option value="3">⭐⭐⭐ 3 Stars - Average</option>
+                                <option value="2">⭐⭐ 2 Stars - Poor</option>
+                                <option value="1">⭐ 1 Star - Terrible</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Review / Feedback Comment</label>
+                            <textarea id="reviewComment" rows="3" placeholder="Describe your stay experience..."></textarea>
+                        </div>
+                        <button type="submit" class="book-btn" style="max-width: 250px;">Submit Review</button>
+                    </form>
+                </div>
+
+                <!-- Hotel Guest Reviews -->
+                <div>
+                    <h3>Guest Reviews & Ratings</h3>
+                    <div id="customer-reviews-header" style="font-weight: bold; color: #667eea; margin-bottom: 15px;"></div>
+                    <div id="customer-reviews-list"></div>
+                </div>
             </div>
 
         </div>

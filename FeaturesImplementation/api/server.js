@@ -35,6 +35,11 @@ const authenticationSystem = require('../Feature7_Security/AuthenticationSystem'
 const backupRoutine = require('../Feature7_Security/BackupRoutine');
 const databaseRecovery = require('../Feature7_Security/DatabaseRecovery');
 
+// Feature 8: Guest Services, Housekeeping & Reviews
+const guestServicesModule = require('../Feature8_GuestServices/GuestServices');
+const housekeepingModule = require('../Feature8_GuestServices/HousekeepingManagement');
+const guestReviewsModule = require('../Feature8_GuestServices/GuestReviews');
+
 const app = express();
 const port = 3000;
 
@@ -44,7 +49,6 @@ const session = require('express-session');
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
-// Note: static files are served after guarded routes so we can protect sensitive pages
 
 // Create data directory if it doesn't exist
 const dataDir = path.join(__dirname, '..', 'data');
@@ -52,8 +56,7 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Initialize session - use memory store for now, or file-based store
-const sessions = {};
+// Initialize session
 const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'change_this_secret',
   resave: false,
@@ -66,14 +69,12 @@ app.use(sessionMiddleware);
 
 // Authentication Middleware
 const verifyAuthToken = (req, res, next) => {
-  // Prefer session-based authentication
   if (req.session && req.session.user) {
     req.user = req.session.user;
     return next();
   }
 
-  // Fallback to token-based auth
-  const token = req.headers.authorization?.split(' ')[1]; // Extract token from "Bearer <token>"
+  const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
     return res.status(401).json({ success: false, message: 'No authentication token or session provided' });
   }
@@ -95,27 +96,10 @@ const requireRole = (allowedRoles = []) => (req, res, next) => {
   next();
 };
 
-// Mock database for demonstration
-const mockDatabase = {
-  rooms: [],
-  users: [
-    // Default test users
-    { id: 1, username: 'admin', passwordHash: authenticationSystem.hashPassword('Admin@123'), role: 'admin' },
-    { id: 2, username: 'manager', passwordHash: authenticationSystem.hashPassword('Manager@123'), role: 'manager' },
-    { id: 3, username: 'staff', passwordHash: authenticationSystem.hashPassword('Staff@123'), role: 'staff' }
-  ],
-  reservations: [],
-  payments: [],
-  invoices: [],
-  sessions: [],
-  auditLogs: []
-};
-
-// Initialize persistent database (creates files/tables)
-// Initialize persistent database (creates files/tables)
+// Initialize persistent database
 init();
 
-// Guarded page routes (serve protected admin pages only to authenticated users)
+// Guarded page routes
 app.get('/portal.html', verifyAuthToken, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/portal.html'));
 });
@@ -124,12 +108,11 @@ app.get('/docs.html', verifyAuthToken, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/docs.html'));
 });
 
-// Serve remaining public static files
+// Serve public static files
 app.use(express.static(path.join(__dirname, '../public')));
 
 // ========== FEATURE 1: INVENTORY & SYSTEM CONFIGURATION ==========
 
-// Room Management Endpoints
 app.post('/api/rooms', verifyAuthToken, requireRole(['admin','manager']), async (req, res) => {
   try {
     const { type, floor, baseRate } = req.body;
@@ -181,7 +164,6 @@ app.delete('/api/rooms/:id', verifyAuthToken, requireRole(['admin','manager']), 
   }
 });
 
-// Pricing & Tax Endpoints
 app.post('/api/pricing/calculate', verifyAuthToken, (req, res) => {
   const { baseRate, taxRate } = req.body;
   const result = pricingAndTax.calculatePrice(baseRate, taxRate);
@@ -194,7 +176,6 @@ app.post('/api/pricing/tax-settings', verifyAuthToken, requireRole(['admin','man
   res.json({ success: true, message: 'Tax settings updated successfully', taxRate });
 });
 
-// User & Role Management Endpoints
 app.post('/api/users', verifyAuthToken, requireRole(['admin']), (req, res) => {
   (async () => {
     try {
@@ -227,7 +208,6 @@ app.get('/api/users', verifyAuthToken, requireRole(['admin']), async (req, res) 
   }
 });
 
-// System Verification Endpoint
 app.post('/api/system/verify', verifyAuthToken, (req, res) => {
   systemVerification.verifySystemConfigurations();
   res.json({ success: true, message: 'System configurations verified' });
@@ -235,7 +215,6 @@ app.post('/api/system/verify', verifyAuthToken, (req, res) => {
 
 // ========== FEATURE 2: RESERVATION ENGINE ==========
 
-// Search Available Rooms
 app.get('/api/reservations/available-rooms', async (req, res) => {
   try {
     const { checkInDate, checkOutDate } = req.query;
@@ -248,14 +227,12 @@ app.get('/api/reservations/available-rooms', async (req, res) => {
   }
 });
 
-// Hold a Room
 app.post('/api/reservations/hold-room', verifyAuthToken, (req, res) => {
   const { roomId, userId } = req.body;
   reservationEngine.holdRoom(roomId, userId);
   res.json({ success: true, message: 'Room held successfully' });
 });
 
-// Create Reservation
 app.post('/api/reservations', verifyAuthToken, async (req, res) => {
   try {
     const { roomId, userId, checkInDate, checkOutDate } = req.body;
@@ -269,7 +246,6 @@ app.post('/api/reservations', verifyAuthToken, async (req, res) => {
   }
 });
 
-// Get All Reservations
 app.get('/api/reservations', verifyAuthToken, async (req, res) => {
   try {
     const reservations = await allAsync('SELECT * FROM reservations');
@@ -280,7 +256,6 @@ app.get('/api/reservations', verifyAuthToken, async (req, res) => {
   }
 });
 
-// Update Reservation Status
 app.put('/api/reservations/:id/status', verifyAuthToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -297,7 +272,6 @@ app.put('/api/reservations/:id/status', verifyAuthToken, async (req, res) => {
   }
 });
 
-// Cancel Reservation
 app.delete('/api/reservations/:id', verifyAuthToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -309,7 +283,6 @@ app.delete('/api/reservations/:id', verifyAuthToken, async (req, res) => {
 
     await runAsync('UPDATE reservations SET status = ? WHERE id = ?', ['Cancelled', id]);
 
-    // Find associated payment
     const payment = await getAsync('SELECT * FROM payments WHERE reservationId = ?', [id]);
     let refundResult = null;
     if (payment && payment.status === 'Authorized') {
@@ -338,7 +311,6 @@ app.delete('/api/reservations/:id', verifyAuthToken, async (req, res) => {
 
 // ========== FEATURE 3: TRANSACTION & PAYMENT PROCESSING ==========
 
-// Process Payment
 app.post('/api/payments', verifyAuthToken, async (req, res) => {
   try {
     const { reservationId, amount } = req.body;
@@ -354,14 +326,12 @@ app.post('/api/payments', verifyAuthToken, async (req, res) => {
   }
 });
 
-// Authorize Payment
 app.post('/api/payments/authorize', verifyAuthToken, (req, res) => {
   const { reservationId, amount } = req.body;
   paymentGateway.authorizePayment(reservationId, amount);
   res.json({ success: true, message: 'Payment authorized successfully' });
 });
 
-// Refund Payment
 app.post('/api/payments/:id/refund', verifyAuthToken, (req, res) => {
   (async () => {
     try {
@@ -385,14 +355,12 @@ app.post('/api/payments/:id/refund', verifyAuthToken, (req, res) => {
 
 // ========== FEATURE 4: CHECK-IN/OUT ==========
 
-// Assign Room
 app.post('/api/check-in/assign-room', verifyAuthToken, (req, res) => {
   const { reservationId, roomId } = req.body;
   roomAssignment.assignRoom(reservationId, roomId);
   res.json({ success: true, message: 'Room assigned successfully' });
 });
 
-// Check-In (Update Room Status)
 app.post('/api/check-in', verifyAuthToken, (req, res) => {
   (async () => {
     try {
@@ -410,7 +378,6 @@ app.post('/api/check-in', verifyAuthToken, (req, res) => {
   })();
 });
 
-// Check-Out (Update Room Status)
 app.post('/api/check-out', verifyAuthToken, (req, res) => {
   (async () => {
     try {
@@ -428,7 +395,6 @@ app.post('/api/check-out', verifyAuthToken, (req, res) => {
   })();
 });
 
-// Post Charge
 app.post('/api/charges', verifyAuthToken, (req, res) => {
   const { reservationId, chargeDescription, amount } = req.body;
   chargePosting.postCharge(reservationId, chargeDescription, amount);
@@ -437,14 +403,12 @@ app.post('/api/charges', verifyAuthToken, (req, res) => {
 
 // ========== FEATURE 5: BILLING & INVOICING ==========
 
-// Calculate Totals
 app.post('/api/billing/calculate', (req, res) => {
   const { subtotal, taxRate } = req.body;
   const result = calculationEngine.calculateTotals(subtotal, taxRate);
   res.json({ success: true, result });
 });
 
-// Generate Invoice
 app.post('/api/invoices', verifyAuthToken, (req, res) => {
   (async () => {
     try {
@@ -460,7 +424,6 @@ app.post('/api/invoices', verifyAuthToken, (req, res) => {
   })();
 });
 
-// Export Invoice
 app.get('/api/invoices/:id/export', verifyAuthToken, (req, res) => {
   const { id } = req.params;
   documentExport.exportInvoice(id);
@@ -469,7 +432,6 @@ app.get('/api/invoices/:id/export', verifyAuthToken, (req, res) => {
 
 // ========== FEATURE 6: REPORTING & ANALYTICS ==========
 
-// Occupancy Dashboard
 app.get('/api/reporting/occupancy', verifyAuthToken, requireRole(['admin','manager']), (req, res) => {
   (async () => {
     try {
@@ -487,7 +449,6 @@ app.get('/api/reporting/occupancy', verifyAuthToken, requireRole(['admin','manag
   })();
 });
 
-// Revenue Report
 app.get('/api/reporting/revenue', verifyAuthToken, requireRole(['admin','manager']), (req, res) => {
   (async () => {
     try {
@@ -503,7 +464,6 @@ app.get('/api/reporting/revenue', verifyAuthToken, requireRole(['admin','manager
   })();
 });
 
-// Audit Logs
 app.get('/api/reporting/audit-logs', verifyAuthToken, requireRole(['admin','manager']), (req, res) => {
   auditTrailViewer.viewAuditLogs();
   res.json({ success: true, message: 'Audit logs retrieved successfully', logs: [] });
@@ -511,8 +471,6 @@ app.get('/api/reporting/audit-logs', verifyAuthToken, requireRole(['admin','mana
 
 // ========== FEATURE 7: SECURITY & INFRASTRUCTURE ==========
 
-// Authentication
-// Return current authenticated user (session or token)
 app.get('/api/auth/me', (req, res) => {
   if (req.session && req.session.user) return res.json({ success: true, user: req.session.user });
   const token = req.headers.authorization?.split(' ')[1];
@@ -543,7 +501,6 @@ app.post('/api/auth/login', (req, res) => {
   })();
 });
 
-// Logout Endpoint
 app.post('/api/auth/logout', verifyAuthToken, (req, res) => {
   if (req.session) {
     req.session.destroy(err => {
@@ -558,7 +515,6 @@ app.post('/api/auth/logout', verifyAuthToken, (req, res) => {
   }
 });
 
-// Backup Routine
 app.post('/api/backup/daily', verifyAuthToken, requireRole(['admin']), (req, res) => {
   backupRoutine.performDailyBackup();
   res.json({ success: true, message: 'Daily backup completed successfully' });
@@ -569,20 +525,17 @@ app.post('/api/backup/weekly', verifyAuthToken, requireRole(['admin']), (req, re
   res.json({ success: true, message: 'Weekly snapshot completed successfully' });
 });
 
-// Database Recovery Testing
 app.post('/api/recovery/test', verifyAuthToken, requireRole(['admin']), (req, res) => {
   databaseRecovery.testDatabaseRecovery();
   res.json({ success: true, message: 'Database recovery test completed successfully' });
 });
 
-// Health Check (no auth required)
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running', timestamp: new Date() });
 });
 
 // ========== CUSTOMER PORTAL: ONLINE BOOKING ENDPOINTS ==========
 
-// Create a customer booking
 app.post('/api/customer/bookings', (req, res) => {
   (async () => {
     try {
@@ -610,7 +563,6 @@ app.post('/api/customer/bookings', (req, res) => {
   })();
 });
 
-// Get customer bookings by email
 app.get('/api/customer/bookings', (req, res) => {
   (async () => {
     try {
@@ -625,7 +577,6 @@ app.get('/api/customer/bookings', (req, res) => {
   })();
 });
 
-// Get single booking details
 app.get('/api/customer/bookings/:confirmationNumber', (req, res) => {
   (async () => {
     try {
@@ -641,7 +592,6 @@ app.get('/api/customer/bookings/:confirmationNumber', (req, res) => {
   })();
 });
 
-// Cancel customer booking
 app.post('/api/customer/bookings/:confirmationNumber/cancel', (req, res) => {
   (async () => {
     try {
@@ -671,6 +621,160 @@ app.post('/api/customer/bookings/:confirmationNumber/cancel', (req, res) => {
       res.status(500).json({ success: false, message: 'Failed to cancel booking' });
     }
   })();
+});
+
+// ========== FEATURE 8: GUEST SERVICES, HOUSEKEEPING & REVIEWS ==========
+
+app.post('/api/customer/bookings/:confirmationNumber/services', async (req, res) => {
+  try {
+    const { confirmationNumber } = req.params;
+    const { serviceType, details, cost } = req.body;
+
+    const serviceValidation = guestServicesModule.createServiceRequest(confirmationNumber, serviceType, details, cost);
+    if (!serviceValidation.success) {
+      return res.status(400).json(serviceValidation);
+    }
+
+    const result = await runAsync(
+      'INSERT INTO guest_services (confirmationNumber, serviceType, details, cost, status, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+      [confirmationNumber, serviceType, details || '', parseFloat(cost) || 0, 'Pending', new Date().toISOString()]
+    );
+    const serviceRequest = await getAsync('SELECT * FROM guest_services WHERE id = ?', [result.lastID]);
+
+    await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+      'Guest Service Requested',
+      `Service '${serviceType}' requested for booking ${confirmationNumber}`,
+      new Date().toISOString()
+    ]);
+
+    res.json({ success: true, message: 'Service request created successfully', serviceRequest });
+  } catch (err) {
+    console.error('Error creating service request:', err);
+    res.status(500).json({ success: false, message: 'Failed to create service request' });
+  }
+});
+
+app.get('/api/customer/bookings/:confirmationNumber/services', async (req, res) => {
+  try {
+    const { confirmationNumber } = req.params;
+    const requests = await allAsync('SELECT * FROM guest_services WHERE confirmationNumber = ?', [confirmationNumber]);
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error('Error fetching booking services:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch booking services' });
+  }
+});
+
+app.get('/api/services/requests', verifyAuthToken, async (req, res) => {
+  try {
+    const requests = await allAsync('SELECT * FROM guest_services ORDER BY id DESC');
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error('Error fetching service requests:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch service requests' });
+  }
+});
+
+app.put('/api/services/requests/:id/status', verifyAuthToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const validation = guestServicesModule.updateServiceRequestStatus(id, status);
+    if (!validation.success) {
+      return res.status(400).json(validation);
+    }
+
+    await runAsync('UPDATE guest_services SET status = ? WHERE id = ?', [status, id]);
+    const updated = await getAsync('SELECT * FROM guest_services WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Service request status updated', serviceRequest: updated });
+  } catch (err) {
+    console.error('Error updating service request status:', err);
+    res.status(500).json({ success: false, message: 'Failed to update service request status' });
+  }
+});
+
+app.get('/api/housekeeping/tasks', verifyAuthToken, async (req, res) => {
+  try {
+    const tasks = await allAsync('SELECT * FROM housekeeping_tasks ORDER BY id DESC');
+    res.json({ success: true, tasks });
+  } catch (err) {
+    console.error('Error fetching housekeeping tasks:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch housekeeping tasks' });
+  }
+});
+
+app.post('/api/housekeeping/tasks', verifyAuthToken, async (req, res) => {
+  try {
+    const { roomId, taskType, priority, assignedTo, notes } = req.body;
+    const taskValidation = housekeepingModule.createHousekeepingTask(roomId, taskType, priority, assignedTo, notes);
+    if (!taskValidation.success) {
+      return res.status(400).json(taskValidation);
+    }
+
+    const result = await runAsync(
+      'INSERT INTO housekeeping_tasks (roomId, taskType, priority, status, assignedTo, notes, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [roomId, taskType, priority || 'Normal', 'Pending', assignedTo || 'Unassigned', notes || '', new Date().toISOString()]
+    );
+    const task = await getAsync('SELECT * FROM housekeeping_tasks WHERE id = ?', [result.lastID]);
+    res.json({ success: true, message: 'Housekeeping task created successfully', task });
+  } catch (err) {
+    console.error('Error creating housekeeping task:', err);
+    res.status(500).json({ success: false, message: 'Failed to create housekeeping task' });
+  }
+});
+
+app.put('/api/housekeeping/tasks/:id', verifyAuthToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, assignedTo, notes } = req.body;
+    const validation = housekeepingModule.updateTaskStatus(id, status);
+    if (!validation.success) {
+      return res.status(400).json(validation);
+    }
+
+    await runAsync(
+      'UPDATE housekeeping_tasks SET status = ?, assignedTo = COALESCE(?, assignedTo), notes = COALESCE(?, notes) WHERE id = ?',
+      [status, assignedTo, notes, id]
+    );
+    const updated = await getAsync('SELECT * FROM housekeeping_tasks WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Housekeeping task updated', task: updated });
+  } catch (err) {
+    console.error('Error updating housekeeping task:', err);
+    res.status(500).json({ success: false, message: 'Failed to update housekeeping task' });
+  }
+});
+
+app.post('/api/customer/bookings/:confirmationNumber/review', async (req, res) => {
+  try {
+    const { confirmationNumber } = req.params;
+    const { rating, comment } = req.body;
+
+    const validation = guestReviewsModule.addGuestReview(confirmationNumber, rating, comment);
+    if (!validation.success) {
+      return res.status(400).json(validation);
+    }
+
+    const result = await runAsync(
+      'INSERT INTO guest_reviews (confirmationNumber, rating, comment, createdAt) VALUES (?, ?, ?, ?)',
+      [confirmationNumber, parseInt(rating, 10), comment || '', new Date().toISOString()]
+    );
+    const review = await getAsync('SELECT * FROM guest_reviews WHERE id = ?', [result.lastID]);
+    res.json({ success: true, message: 'Guest review submitted successfully', review });
+  } catch (err) {
+    console.error('Error submitting guest review:', err);
+    res.status(500).json({ success: false, message: 'Failed to submit guest review' });
+  }
+});
+
+app.get('/api/customer/reviews', async (req, res) => {
+  try {
+    const reviews = await allAsync('SELECT * FROM guest_reviews ORDER BY id DESC');
+    const summary = guestReviewsModule.calculateAverageRating(reviews);
+    res.json({ success: true, reviews, metrics: summary });
+  } catch (err) {
+    console.error('Error fetching guest reviews:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch guest reviews' });
+  }
 });
 
 // Start the server
