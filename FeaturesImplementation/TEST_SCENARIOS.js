@@ -192,10 +192,30 @@ function testAuthenticationFlow() {
     console.log('\n✅ All Authentication Tests Passed!\n');
 }
 
-<<<<<<< HEAD
-// Scenario 10: Housekeeping & Room Maintenance Management
+// Test Scenario 10: Feature 8 Guest Services, Housekeeping & Reviews
+function testFeature8Flow() {
+    console.log('=== TEST SCENARIO 10: Guest Services, Housekeeping & Feedback ===');
+    console.log('\n📝 Test Case 1: Request Add-on Service');
+    console.log('  - Endpoint: POST /api/customer/bookings/BOOK12345/services');
+    console.log('  - Payload: { serviceType: "Airport Transfer", details: "Flight AA123", cost: 40 }');
+    console.log('  - ✓ Result: Passed - Service request created with Pending status');
+
+    console.log('\n📝 Test Case 2: Manage Housekeeping Task');
+    console.log('  - Endpoint: POST /api/housekeeping/tasks');
+    console.log('  - Payload: { roomId: 101, taskType: "Deep Cleaning", priority: "High" }');
+    console.log('  - ✓ Result: Passed - Housekeeping task assigned');
+
+    console.log('\n📝 Test Case 3: Submit Post-Stay Review & Compute Rating');
+    console.log('  - Endpoint: POST /api/customer/bookings/BOOK12345/review');
+    console.log('  - Payload: { rating: 5, comment: "Wonderful stay and great staff!" }');
+    console.log('  - ✓ Result: Passed - Review recorded & average rating updated');
+
+    console.log('\n✅ All Feature 8 Tests Passed!\n');
+}
+
+// Scenario 11: Housekeeping & Room Maintenance Management
 function testHousekeepingAndMaintenance() {
-    console.log('=== TEST SCENARIO 10: Housekeeping & Room Maintenance Management ===');
+    console.log('=== TEST SCENARIO 11: Housekeeping & Room Maintenance Management ===');
     const housekeepingManager = require('./Feature8_Housekeeping/HousekeepingManager');
     const maintenanceTracker = require('./Feature8_Housekeeping/MaintenanceTracker');
 
@@ -221,27 +241,6 @@ function testHousekeepingAndMaintenance() {
     console.log(`✓ Maintenance ticket #1 resolved: "${maintResolved.resolutionNotes}"`);
     console.log(`✓ Room 2 restored to "${maintResolved.roomStatus}" status in inventory`);
     console.log('✅ All Housekeeping & Maintenance Tests Passed!\n');
-=======
-// Test Scenario 10: Feature 8 Guest Services, Housekeeping & Reviews
-function testFeature8Flow() {
-    console.log('=== TEST SCENARIO 10: Guest Services, Housekeeping & Feedback ===');
-    console.log('\n📝 Test Case 1: Request Add-on Service');
-    console.log('  - Endpoint: POST /api/customer/bookings/BOOK12345/services');
-    console.log('  - Payload: { serviceType: "Airport Transfer", details: "Flight AA123", cost: 40 }');
-    console.log('  - ✓ Result: Passed - Service request created with Pending status');
-
-    console.log('\n📝 Test Case 2: Manage Housekeeping Task');
-    console.log('  - Endpoint: POST /api/housekeeping/tasks');
-    console.log('  - Payload: { roomId: 101, taskType: "Deep Cleaning", priority: "High" }');
-    console.log('  - ✓ Result: Passed - Housekeeping task assigned');
-
-    console.log('\n📝 Test Case 3: Submit Post-Stay Review & Compute Rating');
-    console.log('  - Endpoint: POST /api/customer/bookings/BOOK12345/review');
-    console.log('  - Payload: { rating: 5, comment: "Wonderful stay and great staff!" }');
-    console.log('  - ✓ Result: Passed - Review recorded & average rating updated');
-
-    console.log('\n✅ All Feature 8 Tests Passed!\n');
->>>>>>> origin/main
 }
 
 // Run all test scenarios
@@ -259,11 +258,8 @@ function runAllTests() {
     testReporting();
     testSecurityOperations();
     testAuthenticationFlow();
-<<<<<<< HEAD
-    testHousekeepingAndMaintenance();
-=======
     testFeature8Flow();
->>>>>>> origin/main
+    testHousekeepingAndMaintenance();
     
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║   All Test Scenarios Completed Successfully! ✓             ║');

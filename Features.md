@@ -59,21 +59,12 @@ While not a "business process" in the DFD, these are critical technical ToDos fo
 - **ToDo: Automated Backup Routine:** Script the database to perform daily incremental backups and weekly full "snapshots".
 - **ToDo: Database Recovery Testing:** Establish a monthly routine to verify that backup data can be successfully restored.
 
-<<<<<<< HEAD
-### Feature 8: Housekeeping & Room Maintenance Management (Operational Module)
+### Feature 8: Guest Services, Housekeeping & Room Maintenance Module
 
-This feature closes the operational loop in traditional hotel procedures, transitioning rooms from checkout cleaning and handling room defects.
+This feature bridges traditional hotel guest operations, post-checkout room turnover, and post-stay customer experience handling.
 
-- **ToDo: Housekeeping Task Scheduling:** Automatically generate cleaning assignments upon guest check-out and allow manual assignment of routine/deep cleaning tasks.
+- **ToDo: Guest Special Requests & Add-ons:** Build workflow logic for customers and staff to request and manage add-ons (Airport Transfer, Extra Bed, Late Check-out, Breakfast Package).
+- **ToDo: Housekeeping Task Scheduling:** Automatically generate cleaning assignments upon guest check-out and allow manual assignment.
 - **ToDo: Room Turnover & Inspection Flow:** Allow housekeeping supervisors and staff to inspect cleaned rooms and release them back to "Available" status.
-- **ToDo: Maintenance & Out-of-Order Tracking:** Log room issues across categories (HVAC, plumbing, electrical, furniture), set rooms to "Maintenance" status, and restore availability once resolved.
-- **ToDo: Housekeeping Operations Dashboard:** Display real-time KPI metrics for rooms pending cleaning, under maintenance, and ready for occupancy.
-=======
-### Feature 8: Guest Services, Housekeeping & Feedback Management Module
-
-This feature bridges traditional hotel guest operations and post-stay customer experience handling.
-
-- **ToDo: Guest Special Requests & Add-ons:** Build workflow logic for customers and staff to request and manage special add-ons (e.g. Airport Transfer, Extra Bed, Late Check-out Request, Breakfast Package).
-- **ToDo: Housekeeping & Room Maintenance Management:** Implement task assignment, room cleaning status updates, priority tracking, and maintenance issue handling.
-- **ToDo: Guest Feedback & Rating System:** Provide post-stay 1-5 star ratings, customer review submission, and aggregated rating metrics for staff and management.
->>>>>>> origin/main
+- **ToDo: Maintenance & Out-of-Order Tracking:** Log room issues across categories and restore availability once resolved.
+- **ToDo: Guest Feedback & Rating System:** Provide post-stay 1-5 star ratings and aggregated feedback metrics.

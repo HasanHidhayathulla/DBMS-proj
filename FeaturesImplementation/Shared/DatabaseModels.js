@@ -6,7 +6,7 @@ const Room = {
   type: 'TEXT',
   floor: 'INTEGER',
   baseRate: 'REAL',
-  status: 'TEXT' // Available, Occupied, Cleaning
+  status: 'TEXT' // Available, Occupied, Cleaning, Maintenance
 };
 
 // User table model
@@ -45,15 +45,25 @@ const Invoice = {
   createdAt: 'DATE'
 };
 
-<<<<<<< HEAD
+// GuestService table model
+const GuestService = {
+  id: 'INTEGER PRIMARY KEY',
+  confirmationNumber: 'TEXT',
+  serviceType: 'TEXT',
+  details: 'TEXT',
+  cost: 'REAL',
+  status: 'TEXT', // Pending, Approved, Fulfilled, Rejected
+  createdAt: 'TEXT'
+};
+
 // HousekeepingTask table model
 const HousekeepingTask = {
   id: 'INTEGER PRIMARY KEY',
   roomId: 'INTEGER',
-  assignedTo: 'TEXT', // Staff member name or user reference
-  taskType: 'TEXT', // Departure Cleaning, Daily Cleaning, Deep Clean, Inspection
-  priority: 'TEXT', // Low, Medium, High, Urgent
-  status: 'TEXT', // Pending, In_Progress, Completed
+  assignedTo: 'TEXT',
+  taskType: 'TEXT',
+  priority: 'TEXT', // Low, Medium/Normal, High, Urgent
+  status: 'TEXT', // Pending, In_Progress/In Progress, Completed, Cancelled
   notes: 'TEXT',
   createdAt: 'TEXT',
   completedAt: 'TEXT'
@@ -66,39 +76,14 @@ const MaintenanceRequest = {
   reportedBy: 'TEXT',
   issueCategory: 'TEXT', // Plumbing, Electrical, HVAC, Furniture, Other
   description: 'TEXT',
-  priority: 'TEXT', // Low, Medium, High, Urgent
+  priority: 'TEXT',
   status: 'TEXT', // Reported, In_Progress, Resolved
   resolutionNotes: 'TEXT',
   createdAt: 'TEXT',
   resolvedAt: 'TEXT'
 };
 
-module.exports = { Room, User, Reservation, Payment, Invoice, HousekeepingTask, MaintenanceRequest };
-=======
-// GuestService table model (Feature 8)
-const GuestService = {
-  id: 'INTEGER PRIMARY KEY',
-  confirmationNumber: 'TEXT',
-  serviceType: 'TEXT',
-  details: 'TEXT',
-  cost: 'REAL',
-  status: 'TEXT', // Pending, Approved, Fulfilled, Rejected
-  createdAt: 'TEXT'
-};
-
-// HousekeepingTask table model (Feature 8)
-const HousekeepingTask = {
-  id: 'INTEGER PRIMARY KEY',
-  roomId: 'INTEGER',
-  taskType: 'TEXT',
-  priority: 'TEXT', // Low, Normal, High, Urgent
-  status: 'TEXT', // Pending, In Progress, Completed, Cancelled
-  assignedTo: 'TEXT',
-  notes: 'TEXT',
-  createdAt: 'TEXT'
-};
-
-// GuestReview table model (Feature 8)
+// GuestReview table model
 const GuestReview = {
   id: 'INTEGER PRIMARY KEY',
   confirmationNumber: 'TEXT',
@@ -107,5 +92,4 @@ const GuestReview = {
   createdAt: 'TEXT'
 };
 
-module.exports = { Room, User, Reservation, Payment, Invoice, GuestService, HousekeepingTask, GuestReview };
->>>>>>> origin/main
+module.exports = { Room, User, Reservation, Payment, Invoice, GuestService, HousekeepingTask, MaintenanceRequest, GuestReview };

@@ -35,15 +35,12 @@ const authenticationSystem = require('../Feature7_Security/AuthenticationSystem'
 const backupRoutine = require('../Feature7_Security/BackupRoutine');
 const databaseRecovery = require('../Feature7_Security/DatabaseRecovery');
 
-<<<<<<< HEAD
+// Feature 8 modules
 const housekeepingManager = require('../Feature8_Housekeeping/HousekeepingManager');
 const maintenanceTracker = require('../Feature8_Housekeeping/MaintenanceTracker');
-=======
-// Feature 8: Guest Services, Housekeeping & Reviews
 const guestServicesModule = require('../Feature8_GuestServices/GuestServices');
 const housekeepingModule = require('../Feature8_GuestServices/HousekeepingManagement');
 const guestReviewsModule = require('../Feature8_GuestServices/GuestReviews');
->>>>>>> origin/main
 
 const app = express();
 const port = 3000;
@@ -548,7 +545,6 @@ app.post('/api/recovery/test', verifyAuthToken, requireRole(['admin']), (req, re
   res.json({ success: true, message: 'Database recovery test completed successfully' });
 });
 
-<<<<<<< HEAD
 // ========== FEATURE 8: HOUSEKEEPING & MAINTENANCE ==========
 
 // Get rooms grouped by status for Housekeeping view
@@ -751,8 +747,6 @@ app.put('/api/maintenance/:id/resolve', verifyAuthToken, requireRole(['admin', '
 });
 
 // Health Check (no auth required)
-=======
->>>>>>> origin/main
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running', timestamp: new Date() });
 });

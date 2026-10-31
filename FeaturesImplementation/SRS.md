@@ -147,7 +147,6 @@ At a high level, the system shall:
 - **FR-7.2** Enforce RBAC permissions.
 - **FR-7.3** Execute daily backups, weekly snapshots, and recovery testing.
 
-<<<<<<< HEAD
 - **FR-7.1** The system shall support user login with username and password.
 - **FR-7.2** The system shall generate an authentication token on successful login.
 - **FR-7.3** The system shall support server-side sessions.
@@ -178,15 +177,12 @@ At a high level, the system shall:
 - **FR-8.9** The system shall allow customers to cancel eligible bookings.
 - **FR-8.10** The system shall calculate and display a refund amount based on cancellation timing.
 - **FR-8.11** The system shall process refunds automatically for online payments when a booking is cancelled.
-=======
-### 3.8 Feature 8: Guest Services, Housekeeping & Feedback Management
-- **FR-8.1** The system shall allow customers and staff to create special add-on service requests (Airport Transfer, Extra Bed, Late Check-Out, Breakfast Package) associated with a booking confirmation number.
-- **FR-8.2** The system shall allow staff to view and update the status of guest service requests (Pending, Approved, Fulfilled, Rejected).
-- **FR-8.3** The system shall allow staff users to create housekeeping and maintenance tasks for specific rooms with priority levels and notes.
-- **FR-8.4** The system shall allow staff users to list and update housekeeping task statuses (Pending, In Progress, Completed, Cancelled).
-- **FR-8.5** The system shall allow customers to submit post-stay ratings (1-5 stars) and review comments using their confirmation number.
-- **FR-8.6** The system shall display aggregated guest review metrics (average star rating and total review count) and individual guest reviews.
->>>>>>> origin/main
+
+### 3.8A Guest Services & Feedback
+
+- **FR-8A.1** The system shall allow customers and staff to create add-on service requests linked to booking confirmation numbers.
+- **FR-8A.2** The system shall allow staff to update service request status (Pending, Approved, Fulfilled, Rejected).
+- **FR-8A.3** The system shall allow customers to submit post-stay ratings (1-5) and review comments and view aggregate review metrics.
 
 ## 4. External Interface Requirements
 
@@ -211,7 +207,6 @@ The backend shall expose REST JSON endpoints for Feature 8:
 ### 5.1 Core Data Entities
 - Room, User, Reservation, Payment, Invoice, AuditLog, GuestService, HousekeepingTask, GuestReview.
 
-<<<<<<< HEAD
 The system shall maintain records for at least the following entities:
 
 - Rooms
@@ -389,7 +384,3 @@ The system shall be considered functionally complete when the following conditio
 - `GET /api/customer/bookings`
 - `GET /api/customer/bookings/:confirmationNumber`
 - `POST /api/customer/bookings/:confirmationNumber/cancel`
-=======
-## 6. Acceptance Summary
-The system is functionally complete when staff and customer users can interact with all 8 features seamlessly.
->>>>>>> origin/main

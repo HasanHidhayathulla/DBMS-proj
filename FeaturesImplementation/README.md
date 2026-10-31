@@ -13,11 +13,8 @@ FeaturesImplementation/
 ├── Feature5_Billing/            # Billing and invoicing
 ├── Feature6_Reporting/          # Reports and analytics
 ├── Feature7_Security/           # Security and infrastructure
-<<<<<<< HEAD
-├── Feature8_Housekeeping/       # Housekeeping & room maintenance
-=======
 ├── Feature8_GuestServices/      # Guest add-on services, housekeeping & reviews
->>>>>>> origin/main
+├── Feature8_Housekeeping/       # Housekeeping & room maintenance
 ├── Shared/                      # Shared database models
 ├── api/                         # Backend API server
 ├── public/                      # Frontend HTML/CSS/JS
@@ -72,20 +69,13 @@ FeaturesImplementation/
 - **Automated Backup Routine**: Daily incremental and weekly full backups
 - **Database Recovery Testing**: Verify backup restoration
 
-<<<<<<< HEAD
-### Feature 8: Housekeeping & Room Maintenance Management (Operational Module)
-
-- **Housekeeping Task Scheduling**: Automatically create cleaning tasks upon guest checkout and assign staff
-- **Room Turnover & Inspection Flow**: Mark cleaned and inspected rooms as "Available"
-- **Maintenance & Defect Tracking**: Report room issues (HVAC, plumbing, electrical, etc.), set rooms out of order, and restore them upon repair
-- **Housekeeping Dashboard**: Real-time visibility into rooms pending cleaning, in maintenance, and available
-=======
-### Feature 8: Guest Services, Housekeeping & Reviews (Guest & Staff Module)
+### Feature 8: Guest Services, Housekeeping & Room Maintenance (Guest & Staff Module)
 
 - **Guest Add-on Services**: Request special add-on services (Airport Shuttle, Extra Bed, Late Check-out, Breakfast)
-- **Housekeeping & Room Maintenance**: Track room cleaning tasks, priority levels, and maintenance statuses
+- **Housekeeping Task Scheduling**: Automatically create and assign room cleaning tasks
+- **Room Turnover & Inspection Flow**: Mark cleaned and inspected rooms as "Available"
+- **Maintenance & Defect Tracking**: Report room issues and restore availability after repair
 - **Guest Feedback & Rating**: Submit post-stay 1-5 star ratings and reviews, with aggregated metrics
->>>>>>> origin/main
 
 ## Installation & Setup
 
@@ -177,10 +167,11 @@ http://localhost:3000
 ### Security
 
 - `POST /api/auth/login` - User login
-<<<<<<< HEAD
-- `POST /api/backup/daily` - Perform daily backup
-- `POST /api/backup/weekly` - Perform weekly snapshot
-- `POST /api/recovery/test` - Test database recovery
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Current identity
+- `POST /api/backup/daily` - Daily backup
+- `POST /api/backup/weekly` - Weekly snapshot
+- `POST /api/recovery/test` - Test recovery
 
 ### Housekeeping & Maintenance
 
@@ -191,91 +182,6 @@ http://localhost:3000
 - `POST /api/maintenance` - Report room maintenance issue (sets room to Maintenance)
 - `GET /api/maintenance` - List all maintenance tickets
 - `PUT /api/maintenance/:id/resolve` - Resolve maintenance ticket and restore room to Available
-
-## Usage Guide
-
-### 1. Adding a Room
-
-- Navigate to the **Inventory** tab
-- Fill in room details (Type, Floor, Base Rate)
-- Click "Add Room"
-
-### 2. Creating a Reservation
-
-- Go to the **Reservations** tab
-- Search for available rooms using check-in/check-out dates
-- Fill in reservation details and click "Create Reservation"
-
-### 3. Processing a Payment
-
-- Navigate to the **Payments** tab
-- Enter reservation ID and payment amount
-- Click "Process Payment"
-
-### 4. Guest Check-In
-
-- Go to the **Check-In/Out** tab
-- Enter room ID and reservation ID
-- Click "Check-In"
-
-### 5. Generating an Invoice
-
-- Navigate to the **Billing** tab
-- Enter reservation ID and billing details
-- Click "Generate Invoice"
-
-### 6. Viewing Reports
-
-- Go to the **Reports** tab
-- View occupancy dashboard and revenue reports
-- Refresh data as needed
-
-## Frontend Features
-
-### User Interface Components
-
-- **Responsive Dashboard**: Real-time occupancy and revenue metrics
-- **Navigation Tabs**: Easy access to all features
-- **Form Inputs**: Intuitive forms for data entry
-- **Data Tables**: Display and manage data
-- **Status Badges**: Visual status indicators
-- **Notifications**: Success/error messages
-
-### Styling
-
-- Modern gradient design with purple theme
-- Responsive layout for mobile and desktop
-- Interactive buttons and forms
-- Clear visual hierarchy
-- Smooth animations and transitions
-
-## Backend Architecture
-
-### API Server (Express.js)
-
-- RESTful endpoints for all operations
-- CORS support for frontend integration
-- JSON request/response handling
-- Mock database for demonstration
-
-### Feature Modules
-
-Each feature is organized in a dedicated folder with specific modules:
-
-- Room management logic
-- Reservation engine
-- Payment gateway integration
-- Check-in/out operations
-- Billing calculations
-- Reporting and analytics
-- Security functions
-=======
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/me` - Current identity
-- `POST /api/backup/daily` - Daily backup
-- `POST /api/backup/weekly` - Weekly snapshot
-- `POST /api/recovery/test` - Test recovery
->>>>>>> origin/main
 
 ## Database Models
 
