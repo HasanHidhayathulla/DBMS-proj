@@ -45,49 +45,49 @@ const Invoice = {
   createdAt: 'DATE'
 };
 
-// GuestService table model
+// GuestService table model (Feature 8)
 const GuestService = {
   id: 'INTEGER PRIMARY KEY',
   confirmationNumber: 'TEXT',
-  serviceType: 'TEXT',
+  serviceType: 'TEXT', // Airport Transfer, Breakfast Package, Late Check-out, Extra Bed
   details: 'TEXT',
   cost: 'REAL',
-  status: 'TEXT', // Pending, Approved, Fulfilled, Rejected
+  status: 'TEXT', // Requested, Confirmed, Completed, Cancelled
   createdAt: 'TEXT'
 };
 
-// HousekeepingTask table model
+// HousekeepingTask table model (Housekeeping operations)
 const HousekeepingTask = {
   id: 'INTEGER PRIMARY KEY',
   roomId: 'INTEGER',
   assignedTo: 'TEXT',
-  taskType: 'TEXT',
-  priority: 'TEXT', // Low, Medium/Normal, High, Urgent
-  status: 'TEXT', // Pending, In_Progress/In Progress, Completed, Cancelled
+  taskType: 'TEXT', // Departure Cleaning, Daily Cleaning, Deep Clean, Inspection
+  priority: 'TEXT', // Low, Normal, High, Urgent
+  status: 'TEXT', // Pending, In Progress, Completed
   notes: 'TEXT',
   createdAt: 'TEXT',
   completedAt: 'TEXT'
 };
 
-// MaintenanceRequest table model
+// MaintenanceRequest table model (Facility & Defect tracking)
 const MaintenanceRequest = {
   id: 'INTEGER PRIMARY KEY',
   roomId: 'INTEGER',
   reportedBy: 'TEXT',
   issueCategory: 'TEXT', // Plumbing, Electrical, HVAC, Furniture, Other
   description: 'TEXT',
-  priority: 'TEXT',
+  priority: 'TEXT', // Low, Medium, High, Urgent
   status: 'TEXT', // Reported, In_Progress, Resolved
   resolutionNotes: 'TEXT',
   createdAt: 'TEXT',
   resolvedAt: 'TEXT'
 };
 
-// GuestReview table model
+// GuestReview table model (Feature 8)
 const GuestReview = {
   id: 'INTEGER PRIMARY KEY',
   confirmationNumber: 'TEXT',
-  rating: 'INTEGER', // 1-5
+  rating: 'INTEGER', // 1-5 stars
   comment: 'TEXT',
   createdAt: 'TEXT'
 };

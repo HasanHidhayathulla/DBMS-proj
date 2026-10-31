@@ -14,7 +14,6 @@ FeaturesImplementation/
 ├── Feature6_Reporting/          # Reports and analytics
 ├── Feature7_Security/           # Security and infrastructure
 ├── Feature8_GuestServices/      # Guest add-on services, housekeeping & reviews
-├── Feature8_Housekeeping/       # Housekeeping & room maintenance
 ├── Shared/                      # Shared database models
 ├── api/                         # Backend API server
 ├── public/                      # Frontend HTML/CSS/JS
@@ -69,12 +68,10 @@ FeaturesImplementation/
 - **Automated Backup Routine**: Daily incremental and weekly full backups
 - **Database Recovery Testing**: Verify backup restoration
 
-### Feature 8: Guest Services, Housekeeping & Room Maintenance (Guest & Staff Module)
+### Feature 8: Guest Services, Housekeeping & Reviews (Guest & Staff Module)
 
 - **Guest Add-on Services**: Request special add-on services (Airport Shuttle, Extra Bed, Late Check-out, Breakfast)
-- **Housekeeping Task Scheduling**: Automatically create and assign room cleaning tasks
-- **Room Turnover & Inspection Flow**: Mark cleaned and inspected rooms as "Available"
-- **Maintenance & Defect Tracking**: Report room issues and restore availability after repair
+- **Housekeeping & Room Maintenance**: Track room cleaning tasks, priority levels, and maintenance statuses
 - **Guest Feedback & Rating**: Submit post-stay 1-5 star ratings and reviews, with aggregated metrics
 
 ## Installation & Setup
@@ -173,16 +170,6 @@ http://localhost:3000
 - `POST /api/backup/weekly` - Weekly snapshot
 - `POST /api/recovery/test` - Test recovery
 
-### Housekeeping & Maintenance
-
-- `GET /api/housekeeping/rooms` - Get rooms grouped by housekeeping status and statistics
-- `GET /api/housekeeping/tasks` - List all housekeeping tasks
-- `POST /api/housekeeping/assign` - Create or assign cleaning tasks
-- `POST /api/housekeeping/clean` - Mark room cleaned, inspected, and available
-- `POST /api/maintenance` - Report room maintenance issue (sets room to Maintenance)
-- `GET /api/maintenance` - List all maintenance tickets
-- `PUT /api/maintenance/:id/resolve` - Resolve maintenance ticket and restore room to Available
-
 ## Database Models
 
 - **Room**
@@ -199,3 +186,13 @@ http://localhost:3000
 **Version**: 1.1.0
 **Last Updated**: July 21, 2026
 **Status**: Production Ready
+
+### Feature 9: Room Maintenance & Facility Defect Management
+
+- `GET /api/housekeeping/rooms` - Room status distribution (cleaning, maintenance, available)
+- `GET /api/housekeeping/tasks` - List all cleaning and inspection tasks
+- `POST /api/housekeeping/assign` - Create or assign cleaning tasks
+- `POST /api/housekeeping/clean` - Mark room cleaned and return status to Available
+- `POST /api/maintenance` - Report room maintenance issue (sets room to Maintenance)
+- `GET /api/maintenance` - List all maintenance tickets
+- `PUT /api/maintenance/:id/resolve` - Resolve maintenance ticket and restore room to Available

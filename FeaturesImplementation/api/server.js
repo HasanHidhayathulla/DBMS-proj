@@ -35,12 +35,12 @@ const authenticationSystem = require('../Feature7_Security/AuthenticationSystem'
 const backupRoutine = require('../Feature7_Security/BackupRoutine');
 const databaseRecovery = require('../Feature7_Security/DatabaseRecovery');
 
-// Feature 8 modules
-const housekeepingManager = require('../Feature8_Housekeeping/HousekeepingManager');
-const maintenanceTracker = require('../Feature8_Housekeeping/MaintenanceTracker');
+// Feature 8: Guest Services, Housekeeping & Reviews
 const guestServicesModule = require('../Feature8_GuestServices/GuestServices');
 const housekeepingModule = require('../Feature8_GuestServices/HousekeepingManagement');
 const guestReviewsModule = require('../Feature8_GuestServices/GuestReviews');
+const housekeepingManager = require('../Feature8_Housekeeping/HousekeepingManager');
+const maintenanceTracker = require('../Feature8_Housekeeping/MaintenanceTracker');
 
 const app = express();
 const port = 3000;
