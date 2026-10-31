@@ -33,7 +33,9 @@ function init() {
     `CREATE TABLE IF NOT EXISTS auditLogs (id INTEGER PRIMARY KEY, action TEXT, details TEXT, timestamp TEXT);`,
     `CREATE TABLE IF NOT EXISTS guest_services (id INTEGER PRIMARY KEY, confirmationNumber TEXT, serviceType TEXT, details TEXT, cost REAL, status TEXT, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS housekeeping_tasks (id INTEGER PRIMARY KEY, roomId INTEGER, taskType TEXT, priority TEXT, status TEXT, assignedTo TEXT, notes TEXT, createdAt TEXT);`,
-    `CREATE TABLE IF NOT EXISTS guest_reviews (id INTEGER PRIMARY KEY, confirmationNumber TEXT, rating INTEGER, comment TEXT, createdAt TEXT);`
+    `CREATE TABLE IF NOT EXISTS guest_reviews (id INTEGER PRIMARY KEY, confirmationNumber TEXT, rating INTEGER, comment TEXT, createdAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS housekeepingTasks (id INTEGER PRIMARY KEY, roomId INTEGER, assignedTo TEXT, taskType TEXT, priority TEXT, status TEXT, notes TEXT, createdAt TEXT, completedAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS maintenanceRequests (id INTEGER PRIMARY KEY, roomId INTEGER, reportedBy TEXT, issueCategory TEXT, description TEXT, priority TEXT, status TEXT, resolutionNotes TEXT, createdAt TEXT, resolvedAt TEXT);`
   ];
 
   db.serialize(() => {

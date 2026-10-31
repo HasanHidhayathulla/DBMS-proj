@@ -177,6 +177,47 @@ select:focus {
     color: #333;
 }
 
+.status-maintenance {
+    background-color: #fab1a0;
+    color: #c0392b;
+}
+
+.status-in_progress {
+    background-color: #dfe6e9;
+    color: #0984e3;
+}
+
+.status-reported {
+    background-color: #ffeaa7;
+    color: #e67e22;
+}
+
+.status-resolved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.priority-low {
+    background-color: #e2f0d9;
+    color: #385723;
+}
+
+.priority-medium {
+    background-color: #fff2cc;
+    color: #b25900;
+}
+
+.priority-high {
+    background-color: #fce4d6;
+    color: #c65911;
+}
+
+.priority-urgent {
+    background-color: #f8d7da;
+    color: #721c24;
+    font-weight: bold;
+}
+
 .btn-warning:hover {
     background: #e0a800;
     transform: translateY(-2px);

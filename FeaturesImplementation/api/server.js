@@ -35,7 +35,9 @@ const authenticationSystem = require('../Feature7_Security/AuthenticationSystem'
 const backupRoutine = require('../Feature7_Security/BackupRoutine');
 const databaseRecovery = require('../Feature7_Security/DatabaseRecovery');
 
-// Feature 8: Guest Services, Housekeeping & Reviews
+// Feature 8 modules
+const housekeepingManager = require('../Feature8_Housekeeping/HousekeepingManager');
+const maintenanceTracker = require('../Feature8_Housekeeping/MaintenanceTracker');
 const guestServicesModule = require('../Feature8_GuestServices/GuestServices');
 const housekeepingModule = require('../Feature8_GuestServices/HousekeepingManagement');
 const guestReviewsModule = require('../Feature8_GuestServices/GuestReviews');
@@ -386,6 +388,19 @@ app.post('/api/check-out', verifyAuthToken, (req, res) => {
       const room = await getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
       if (!room) return res.status(404).json({ success: false, message: 'Room not found' });
       await runAsync("UPDATE rooms SET status = 'Cleaning' WHERE id = ?", [roomId]);
+
+      // Auto-schedule housekeeping task
+      const taskData = housekeepingManager.createCleaningTask(roomId, 'Departure Cleaning', 'High', 'Guest checked out');
+      await runAsync(
+        'INSERT INTO housekeepingTasks (roomId, assignedTo, taskType, priority, status, notes, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [roomId, 'Unassigned', taskData.taskType, taskData.priority, taskData.status, taskData.notes, taskData.createdAt]
+      );
+      await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+        'Housekeeping Task Created',
+        `Departure cleaning task automatically scheduled for Room ${roomId}`,
+        new Date().toISOString()
+      ]);
+
       const updated = await getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
       res.json({ success: true, message: 'Guest checked out successfully', room: updated });
     } catch (err) {
@@ -530,6 +545,208 @@ app.post('/api/recovery/test', verifyAuthToken, requireRole(['admin']), (req, re
   res.json({ success: true, message: 'Database recovery test completed successfully' });
 });
 
+// ========== FEATURE 8: HOUSEKEEPING & MAINTENANCE ==========
+
+// Get rooms grouped by status for Housekeeping view
+app.get('/api/housekeeping/rooms', verifyAuthToken, async (req, res) => {
+  try {
+    const rooms = await allAsync('SELECT * FROM rooms');
+    const cleaningRooms = rooms.filter(r => r.status === 'Cleaning');
+    const maintenanceRooms = rooms.filter(r => r.status === 'Maintenance');
+    const availableRooms = rooms.filter(r => r.status === 'Available');
+    const occupiedRooms = rooms.filter(r => r.status === 'Occupied');
+
+    res.json({
+      success: true,
+      stats: {
+        total: rooms.length,
+        cleaning: cleaningRooms.length,
+        maintenance: maintenanceRooms.length,
+        available: availableRooms.length,
+        occupied: occupiedRooms.length
+      },
+      rooms
+    });
+  } catch (err) {
+    console.error('Error fetching housekeeping rooms:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch housekeeping room status' });
+  }
+});
+
+// List all housekeeping tasks
+app.get('/api/housekeeping/tasks', verifyAuthToken, async (req, res) => {
+  try {
+    const tasks = await allAsync('SELECT t.*, r.type as roomType, r.floor as roomFloor, r.status as roomStatus FROM housekeepingTasks t LEFT JOIN rooms r ON t.roomId = r.id ORDER BY t.id DESC');
+    res.json({ success: true, tasks });
+  } catch (err) {
+    console.error('Error fetching housekeeping tasks:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch housekeeping tasks' });
+  }
+});
+
+// Create or assign cleaning task
+app.post('/api/housekeeping/assign', verifyAuthToken, requireRole(['admin', 'manager', 'staff']), async (req, res) => {
+  try {
+    const { taskId, roomId, assignedTo, taskType, priority, notes } = req.body;
+
+    if (taskId) {
+      // Assign existing task
+      const existing = await getAsync('SELECT * FROM housekeepingTasks WHERE id = ?', [taskId]);
+      if (!existing) return res.status(404).json({ success: false, message: 'Task not found' });
+      housekeepingManager.assignCleaningTask(taskId, assignedTo || 'Staff');
+      await runAsync('UPDATE housekeepingTasks SET assignedTo = ?, status = ? WHERE id = ?', [assignedTo || 'Staff', 'In_Progress', taskId]);
+      const updated = await getAsync('SELECT * FROM housekeepingTasks WHERE id = ?', [taskId]);
+      return res.json({ success: true, message: 'Task assigned successfully', task: updated });
+    } else if (roomId) {
+      // Create new assigned cleaning task
+      const taskData = housekeepingManager.createCleaningTask(roomId, taskType || 'Daily Cleaning', priority || 'Medium', notes || '');
+      const assigned = housekeepingManager.assignCleaningTask(0, assignedTo || 'Staff');
+      const result = await runAsync(
+        'INSERT INTO housekeepingTasks (roomId, assignedTo, taskType, priority, status, notes, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [roomId, assignedTo || 'Staff', taskData.taskType, taskData.priority, 'In_Progress', notes || '', taskData.createdAt]
+      );
+      await runAsync("UPDATE rooms SET status = 'Cleaning' WHERE id = ?", [roomId]);
+      const task = await getAsync('SELECT * FROM housekeepingTasks WHERE id = ?', [result.lastID]);
+      await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+        'Housekeeping Task Assigned',
+        `Cleaning task created & assigned to ${assignedTo || 'Staff'} for Room ${roomId}`,
+        new Date().toISOString()
+      ]);
+      return res.json({ success: true, message: 'Cleaning task created and assigned', task });
+    } else {
+      return res.status(400).json({ success: false, message: 'taskId or roomId is required' });
+    }
+  } catch (err) {
+    console.error('Error assigning housekeeping task:', err);
+    res.status(500).json({ success: false, message: 'Failed to assign housekeeping task' });
+  }
+});
+
+// Mark room cleaned and ready (transition Cleaning -> Available)
+app.post('/api/housekeeping/clean', verifyAuthToken, requireRole(['admin', 'manager', 'staff']), async (req, res) => {
+  try {
+    const { roomId, notes } = req.body;
+    if (!roomId) return res.status(400).json({ success: false, message: 'roomId is required' });
+
+    const room = await getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
+    if (!room) return res.status(404).json({ success: false, message: 'Room not found' });
+
+    const cleanResult = housekeepingManager.completeCleaning(roomId, notes || '');
+    await runAsync("UPDATE rooms SET status = 'Available' WHERE id = ?", [roomId]);
+    await runAsync(
+      "UPDATE housekeepingTasks SET status = 'Completed', completedAt = ?, notes = COALESCE(notes || ' | Completed: ' || ?, ?) WHERE roomId = ? AND status != 'Completed'",
+      [cleanResult.completedAt, notes || 'Inspected and cleaned', notes || 'Inspected and cleaned', roomId]
+    );
+
+    await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+      'Room Cleaned & Available',
+      `Room ${roomId} cleaning verified and status set to Available`,
+      new Date().toISOString()
+    ]);
+
+    const updatedRoom = await getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
+    res.json({ success: true, message: `Room ${roomId} has been cleaned and is now Available`, room: updatedRoom });
+  } catch (err) {
+    console.error('Error completing cleaning:', err);
+    res.status(500).json({ success: false, message: 'Failed to mark room as cleaned' });
+  }
+});
+
+// Create Maintenance Request (sets room status to Maintenance)
+app.post('/api/maintenance', verifyAuthToken, async (req, res) => {
+  try {
+    const { roomId, reportedBy, issueCategory, description, priority } = req.body;
+    if (!roomId || !description) {
+      return res.status(400).json({ success: false, message: 'roomId and description are required' });
+    }
+
+    const room = await getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
+    if (!room) return res.status(404).json({ success: false, message: 'Room not found' });
+
+    const reporter = reportedBy || req.user?.username || 'Staff';
+    const maintData = maintenanceTracker.reportMaintenanceIssue(
+      roomId,
+      reporter,
+      issueCategory || 'Other',
+      description,
+      priority || 'Medium'
+    );
+
+    const result = await runAsync(
+      'INSERT INTO maintenanceRequests (roomId, reportedBy, issueCategory, description, priority, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [roomId, reporter, issueCategory || 'Other', description, priority || 'Medium', 'Reported', maintData.createdAt]
+    );
+
+    // Set room status to Maintenance
+    await runAsync("UPDATE rooms SET status = 'Maintenance' WHERE id = ?", [roomId]);
+
+    await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+      'Maintenance Requested',
+      `Room ${roomId}: [${issueCategory || 'Other'}] ${description} (Priority: ${priority || 'Medium'})`,
+      new Date().toISOString()
+    ]);
+
+    const request = await getAsync('SELECT * FROM maintenanceRequests WHERE id = ?', [result.lastID]);
+    const updatedRoom = await getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
+    res.json({ success: true, message: 'Maintenance request logged successfully', request, room: updatedRoom });
+  } catch (err) {
+    console.error('Error logging maintenance request:', err);
+    res.status(500).json({ success: false, message: 'Failed to log maintenance request' });
+  }
+});
+
+// List all maintenance requests
+app.get('/api/maintenance', verifyAuthToken, async (req, res) => {
+  try {
+    const requests = await allAsync('SELECT m.*, r.type as roomType, r.floor as roomFloor, r.status as roomStatus FROM maintenanceRequests m LEFT JOIN rooms r ON m.roomId = r.id ORDER BY m.id DESC');
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error('Error fetching maintenance requests:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch maintenance requests' });
+  }
+});
+
+// Resolve Maintenance Request (restores room status to Available)
+app.put('/api/maintenance/:id/resolve', verifyAuthToken, requireRole(['admin', 'manager', 'staff']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { resolutionNotes } = req.body;
+
+    const request = await getAsync('SELECT * FROM maintenanceRequests WHERE id = ?', [id]);
+    if (!request) return res.status(404).json({ success: false, message: 'Maintenance request not found' });
+
+    const resolveData = maintenanceTracker.resolveMaintenanceIssue(id, resolutionNotes || 'Repairs completed');
+
+    await runAsync(
+      'UPDATE maintenanceRequests SET status = ?, resolutionNotes = ?, resolvedAt = ? WHERE id = ?',
+      ['Resolved', resolutionNotes || 'Repairs completed', resolveData.resolvedAt, id]
+    );
+
+    // Restore room to Available if no other active maintenance requests exist for this room
+    const otherActive = await getAsync(
+      "SELECT id FROM maintenanceRequests WHERE roomId = ? AND status != 'Resolved' AND id != ?",
+      [request.roomId, id]
+    );
+    if (!otherActive) {
+      await runAsync("UPDATE rooms SET status = 'Available' WHERE id = ?", [request.roomId]);
+    }
+
+    await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+      'Maintenance Resolved',
+      `Request #${id} for Room ${request.roomId} resolved: ${resolutionNotes || 'Repairs completed'}`,
+      new Date().toISOString()
+    ]);
+
+    const updated = await getAsync('SELECT * FROM maintenanceRequests WHERE id = ?', [id]);
+    const updatedRoom = await getAsync('SELECT * FROM rooms WHERE id = ?', [request.roomId]);
+    res.json({ success: true, message: 'Maintenance issue resolved', request: updated, room: updatedRoom });
+  } catch (err) {
+    console.error('Error resolving maintenance issue:', err);
+    res.status(500).json({ success: false, message: 'Failed to resolve maintenance issue' });
+  }
+});
+
+// Health Check (no auth required)
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running', timestamp: new Date() });
 });
