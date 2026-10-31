@@ -12,7 +12,6 @@ function setAuthToken(token, user) {
     sessionStorage.setItem('authToken', token);
     sessionStorage.setItem('currentUser', JSON.stringify(user));
     updateUIForLoggedInUser();
-    // Redirect to dashboard after login
     if (typeof switchTab === 'function') switchTab('dashboard');
 }
 
@@ -29,7 +28,6 @@ function clearAuthToken() {
     sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('currentUser');
     updateUIForLoggedOutUser();
-    // Redirect to login tab after logout
     if (typeof switchTab === 'function') switchTab('login');
 }
 
@@ -53,7 +51,6 @@ function updateUIForLoggedInUser() {
             userDisplay.textContent = `Logged in as: ${currentUser.username} (${currentUser.role})`;
             userDisplay.style.display = 'block';
         }
-        // Show all auth-required nav buttons
         document.querySelectorAll('.auth-required').forEach(btn => btn.style.display = 'inline-block');
         const loginTab = document.getElementById('login');
         if (loginTab) loginTab.style.display = 'none';
@@ -65,13 +62,11 @@ function updateUIForLoggedInUser() {
 function updateUIForLoggedOutUser() {
     const userDisplay = document.getElementById('user-display');
     if (userDisplay) userDisplay.style.display = 'none';
-    // Hide all auth-required nav buttons
     document.querySelectorAll('.auth-required').forEach(btn => btn.style.display = 'none');
     const loginTab = document.getElementById('login');
     if (loginTab) loginTab.style.display = 'block';
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.style.display = 'none';
-    // Redirect to login tab
     if (typeof switchTab === 'function') switchTab('login');
 }
 
@@ -91,10 +86,9 @@ async function apiCall(endpoint, method = 'GET', data = null) {
         const options = {
             method,
             headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
+            credentials: 'include',
         };
         
-        // Add authorization token if available
         const token = getAuthToken();
         if (token) {
             options.headers['Authorization'] = `Bearer ${token}`;
@@ -107,7 +101,6 @@ async function apiCall(endpoint, method = 'GET', data = null) {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
         const result = await response.json();
         
-        // Handle 401 Unauthorized - token expired
         if (response.status === 401) {
             clearAuthToken();
             showNotification('Session expired. Please login again.', 'error');
@@ -125,15 +118,12 @@ async function apiCall(endpoint, method = 'GET', data = null) {
 
 // Tab switching function
 function switchTab(tabName) {
-    // Hide all tabs
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
 
-    // Remove active class from all buttons
     const buttons = document.querySelectorAll('.nav-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
 
-    // Show selected tab
     const selectedTab = document.getElementById(tabName);
     if (selectedTab) {
         selectedTab.classList.add('active');
@@ -142,12 +132,9 @@ function switchTab(tabName) {
         }
     }
 
-    // Add active class to clicked button if event provided
     try {
         if (event && event.target) event.target.classList.add('active');
-    } catch (e) {
-        // ignore when called programmatically
-    }
+    } catch (e) {}
 }
 
 // ========== DASHBOARD FUNCTIONS ==========
@@ -198,7 +185,6 @@ function loadRooms() {
                 tableBody.innerHTML += row;
             });
 
-            // Update total rooms card
             document.getElementById('total-rooms').innerHTML = `<p>Total: ${data.rooms.length} rooms</p>`;
         }
     });
@@ -391,10 +377,8 @@ function checkIn(event) {
     const roomId = parseInt(document.getElementById('checkInRoomId').value);
     const reservationId = parseInt(document.getElementById('checkInReservationId').value);
 
-    // First assign room
     apiCall('/check-in/assign-room', 'POST', { reservationId, roomId }).then(data => {
         if (data.success) {
-            // Then check-in
             apiCall('/check-in', 'POST', { roomId }).then(checkInData => {
                 if (checkInData.success) {
                     showNotification('Guest checked in successfully!', 'success');
@@ -623,6 +607,130 @@ function generateInvoice(event) {
     });
 }
 
+// ========== FEATURE 8: GUEST SERVICES & HOUSEKEEPING ==========
+
+function createHousekeepingTask(event) {
+    event.preventDefault();
+    const roomId = parseInt(document.getElementById('hkRoomId').value);
+    const taskType = document.getElementById('hkTaskType').value;
+    const priority = document.getElementById('hkPriority').value;
+    const assignedTo = document.getElementById('hkAssignedTo').value;
+    const notes = document.getElementById('hkNotes').value;
+
+    apiCall('/housekeeping/tasks', 'POST', { roomId, taskType, priority, assignedTo, notes }).then(data => {
+        if (data.success) {
+            showNotification(`Housekeeping task created! (ID: ${data.task.id})`, 'success');
+            event.target.reset();
+            loadHousekeepingTasks();
+        }
+    });
+}
+
+function loadHousekeepingTasks() {
+    apiCall('/housekeeping/tasks').then(data => {
+        if (data.success) {
+            const tableBody = document.getElementById('housekeeping-tasks-list');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+            data.tasks.forEach(task => {
+                const row = `
+                    <tr>
+                        <td>${task.id}</td>
+                        <td>${task.roomId}</td>
+                        <td>${task.taskType}</td>
+                        <td>${task.priority}</td>
+                        <td><span class="status-badge status-${task.status.toLowerCase().replace(' ', '-')}">${task.status}</span></td>
+                        <td>${task.assignedTo || 'Unassigned'}</td>
+                        <td>${task.notes || '-'}</td>
+                        <td>
+                            <button onclick="updateHousekeepingStatus(${task.id})" class="btn btn-primary">Update Status</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+    });
+}
+
+function updateHousekeepingStatus(taskId) {
+    const newStatus = prompt('Enter task status (Pending/In Progress/Completed/Cancelled):');
+    if (newStatus) {
+        apiCall(`/housekeeping/tasks/${taskId}`, 'PUT', { status: newStatus }).then(data => {
+            if (data.success) {
+                showNotification('Housekeeping task updated!', 'success');
+                loadHousekeepingTasks();
+            }
+        });
+    }
+}
+
+function loadServiceRequests() {
+    apiCall('/services/requests').then(data => {
+        if (data.success) {
+            const tableBody = document.getElementById('service-requests-list');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+            data.requests.forEach(req => {
+                const row = `
+                    <tr>
+                        <td>${req.id}</td>
+                        <td>${req.confirmationNumber}</td>
+                        <td>${req.serviceType}</td>
+                        <td>${req.details || '-'}</td>
+                        <td>$${parseFloat(req.cost || 0).toFixed(2)}</td>
+                        <td><span class="status-badge status-${req.status.toLowerCase()}">${req.status}</span></td>
+                        <td>
+                            <button onclick="updateServiceRequestStatus(${req.id})" class="btn btn-primary">Update Status</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+    });
+}
+
+function updateServiceRequestStatus(reqId) {
+    const newStatus = prompt('Enter request status (Pending/Approved/Fulfilled/Rejected):');
+    if (newStatus) {
+        apiCall(`/services/requests/${reqId}/status`, 'PUT', { status: newStatus }).then(data => {
+            if (data.success) {
+                showNotification('Service request updated!', 'success');
+                loadServiceRequests();
+            }
+        });
+    }
+}
+
+function loadGuestReviews() {
+    apiCall('/customer/reviews').then(data => {
+        if (data.success) {
+            const metricsDiv = document.getElementById('reviews-metrics-display');
+            if (metricsDiv && data.metrics) {
+                metricsDiv.textContent = `⭐ Average Rating: ${data.metrics.averageRating} / 5 (${data.metrics.totalReviews} Total Reviews)`;
+            }
+
+            const tableBody = document.getElementById('guest-reviews-list');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+            data.reviews.forEach(rev => {
+                const stars = '⭐'.repeat(rev.rating);
+                const row = `
+                    <tr>
+                        <td>${rev.id}</td>
+                        <td>${rev.confirmationNumber}</td>
+                        <td>${stars} (${rev.rating}/5)</td>
+                        <td>${rev.comment || '-'}</td>
+                        <td>${new Date(rev.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+    });
+}
+
 // ========== FEATURE 6: REPORTING ==========
 
 function loadRevenueReport(event) {
@@ -663,12 +771,9 @@ function loginUser(event) {
 
     apiCall('/auth/login', 'POST', { username, password }).then(data => {
         if (data.success) {
-            // Store token and user info
             setAuthToken(data.token, data.user);
             showNotification(`Welcome, ${data.user.username}!`, 'success');
             event.target.reset();
-            
-            // Switch to a different tab
             switchTab('dashboard');
         } else {
             showNotification(data.message || 'Invalid credentials!', 'error');
@@ -712,26 +817,27 @@ function testDatabaseRecovery() {
 
 // Load initial data when page loads
 window.addEventListener('load', () => {
-    // Try to restore session from storage
     if (!loadSessionFromStorage()) {
-        // No client-side stored session — check server-side session
         apiCall('/auth/me').then(me => {
             if (me && me.success && me.user) {
-                // restore user from server session (no token)
                 currentUser = me.user;
                 updateUIForLoggedInUser();
                 loadRooms();
                 loadOccupancy();
                 loadRevenue();
+                loadHousekeepingTasks();
+                loadServiceRequests();
+                loadGuestReviews();
             } else {
-                // No session, show login tab
                 switchTab('login');
             }
         }).catch(() => switchTab('login'));
     } else {
-        // Session restored, load initial data
         loadRooms();
         loadOccupancy();
         loadRevenue();
+        loadHousekeepingTasks();
+        loadServiceRequests();
+        loadGuestReviews();
     }
 });

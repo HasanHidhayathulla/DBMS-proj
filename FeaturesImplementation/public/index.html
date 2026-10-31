@@ -24,6 +24,7 @@
             <button class="nav-btn" onclick="switchTab('check-in-out')">Check-In/Out</button>
             <button class="nav-btn" onclick="switchTab('housekeeping')">Housekeeping</button>
             <button class="nav-btn" onclick="switchTab('billing')">Billing</button>
+            <button class="nav-btn" onclick="switchTab('guest-services')">Guest Services & Housekeeping</button>
             <button class="nav-btn" onclick="switchTab('reporting')">Reports</button>
             <button class="nav-btn" onclick="switchTab('security')">Security</button>
             <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
@@ -337,6 +338,94 @@
                         <input type="number" id="invoiceTax" placeholder="Tax ($)" step="0.01" required>
                         <button type="submit" class="btn btn-success">Generate Invoice</button>
                     </form>
+                </div>
+            </div>
+
+            <!-- GUEST SERVICES & HOUSEKEEPING TAB (FEATURE 8) -->
+            <div id="guest-services" class="tab-content">
+                <h2>Guest Services & Housekeeping Operations</h2>
+
+                <!-- Housekeeping Section -->
+                <div class="form-section">
+                    <h3>Assign Housekeeping / Maintenance Task</h3>
+                    <form onsubmit="createHousekeepingTask(event)">
+                        <input type="number" id="hkRoomId" placeholder="Room ID" required>
+                        <select id="hkTaskType" required>
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Deep Cleaning">Deep Cleaning</option>
+                            <option value="Inspection">Inspection</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Restock">Restock</option>
+                        </select>
+                        <select id="hkPriority">
+                            <option value="Low">Low Priority</option>
+                            <option value="Normal" selected>Normal Priority</option>
+                            <option value="High">High Priority</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                        <input type="text" id="hkAssignedTo" placeholder="Assignee (e.g., Staff Name)">
+                        <input type="text" id="hkNotes" placeholder="Task Notes / Details">
+                        <button type="submit" class="btn btn-success">Create Task</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Housekeeping & Maintenance Tasks</h3>
+                    <button onclick="loadHousekeepingTasks()" class="btn btn-primary">Refresh Tasks</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Room ID</th>
+                                <th>Type</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="housekeeping-tasks-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- Guest Add-on Requests Section -->
+                <div class="list-section">
+                    <h3>Guest Special Requests & Add-ons</h3>
+                    <button onclick="loadServiceRequests()" class="btn btn-primary">Refresh Requests</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Confirmation #</th>
+                                <th>Service Type</th>
+                                <th>Details</th>
+                                <th>Cost ($)</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="service-requests-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- Guest Feedback & Ratings Section -->
+                <div class="list-section">
+                    <h3>Post-Stay Guest Reviews & Ratings</h3>
+                    <button onclick="loadGuestReviews()" class="btn btn-primary">Refresh Reviews</button>
+                    <div id="reviews-metrics-display" style="margin: 15px 0; font-weight: bold; color: #667eea;"></div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Confirmation #</th>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guest-reviews-list"></tbody>
+                    </table>
                 </div>
             </div>
 

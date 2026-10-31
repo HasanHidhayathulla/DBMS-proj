@@ -1,6 +1,6 @@
 # Hotel Management System - Complete Implementation
 
-A comprehensive hotel management system with 7 interconnected features, a robust API layer, and a modern HTML/CSS/JavaScript UI.
+A comprehensive hotel management system with 8 interconnected features, a robust API layer, and a modern HTML/CSS/JavaScript UI.
 
 ## Project Structure
 
@@ -13,7 +13,11 @@ FeaturesImplementation/
 ├── Feature5_Billing/            # Billing and invoicing
 ├── Feature6_Reporting/          # Reports and analytics
 ├── Feature7_Security/           # Security and infrastructure
+<<<<<<< HEAD
 ├── Feature8_Housekeeping/       # Housekeeping & room maintenance
+=======
+├── Feature8_GuestServices/      # Guest add-on services, housekeeping & reviews
+>>>>>>> origin/main
 ├── Shared/                      # Shared database models
 ├── api/                         # Backend API server
 ├── public/                      # Frontend HTML/CSS/JS
@@ -68,12 +72,20 @@ FeaturesImplementation/
 - **Automated Backup Routine**: Daily incremental and weekly full backups
 - **Database Recovery Testing**: Verify backup restoration
 
+<<<<<<< HEAD
 ### Feature 8: Housekeeping & Room Maintenance Management (Operational Module)
 
 - **Housekeeping Task Scheduling**: Automatically create cleaning tasks upon guest checkout and assign staff
 - **Room Turnover & Inspection Flow**: Mark cleaned and inspected rooms as "Available"
 - **Maintenance & Defect Tracking**: Report room issues (HVAC, plumbing, electrical, etc.), set rooms out of order, and restore them upon repair
 - **Housekeeping Dashboard**: Real-time visibility into rooms pending cleaning, in maintenance, and available
+=======
+### Feature 8: Guest Services, Housekeeping & Reviews (Guest & Staff Module)
+
+- **Guest Add-on Services**: Request special add-on services (Airport Shuttle, Extra Bed, Late Check-out, Breakfast)
+- **Housekeeping & Room Maintenance**: Track room cleaning tasks, priority levels, and maintenance statuses
+- **Guest Feedback & Rating**: Submit post-stay 1-5 star ratings and reviews, with aggregated metrics
+>>>>>>> origin/main
 
 ## Installation & Setup
 
@@ -88,16 +100,9 @@ FeaturesImplementation/
 Navigate to the project directory and install required packages:
 
 ```bash
-cd "e:\DBMS proj\FeaturesImplementation"
+cd FeaturesImplementation
 npm install
 ```
-
-This will install:
-
-- **express**: Web server framework
-- **body-parser**: JSON parsing middleware
-- **cors**: Cross-Origin Resource Sharing
-- **sqlite3**: Database (optional, for future enhancement)
 
 ### Step 2: Start the API Server
 
@@ -130,16 +135,6 @@ http://localhost:3000
 - `PUT /api/rooms/:id` - Update room details
 - `DELETE /api/rooms/:id` - Delete a room
 
-### Pricing
-
-- `POST /api/pricing/calculate` - Calculate price with tax
-- `POST /api/pricing/tax-settings` - Update tax settings
-
-### Users
-
-- `GET /api/users` - List all users
-- `POST /api/users` - Add a new user
-
 ### Reservations
 
 - `GET /api/reservations` - List all reservations
@@ -167,15 +162,22 @@ http://localhost:3000
 - `POST /api/invoices` - Generate invoice
 - `GET /api/invoices/:id/export` - Export invoice
 
-### Reporting
+### Guest Services, Housekeeping & Reviews (Feature 8)
 
-- `GET /api/reporting/occupancy` - Get occupancy dashboard
-- `GET /api/reporting/revenue` - Get revenue report
-- `GET /api/reporting/audit-logs` - Get audit logs
+- `POST /api/customer/bookings/:confirmationNumber/services` - Request add-on service
+- `GET /api/customer/bookings/:confirmationNumber/services` - Get booking services
+- `GET /api/services/requests` - List guest service requests
+- `PUT /api/services/requests/:id/status` - Update service request status
+- `GET /api/housekeeping/tasks` - List housekeeping tasks
+- `POST /api/housekeeping/tasks` - Create housekeeping task
+- `PUT /api/housekeeping/tasks/:id` - Update housekeeping task status
+- `POST /api/customer/bookings/:confirmationNumber/review` - Submit post-stay review
+- `GET /api/customer/reviews` - Get guest reviews and rating metrics
 
 ### Security
 
 - `POST /api/auth/login` - User login
+<<<<<<< HEAD
 - `POST /api/backup/daily` - Perform daily backup
 - `POST /api/backup/weekly` - Perform weekly snapshot
 - `POST /api/recovery/test` - Test database recovery
@@ -267,110 +269,27 @@ Each feature is organized in a dedicated folder with specific modules:
 - Billing calculations
 - Reporting and analytics
 - Security functions
+=======
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Current identity
+- `POST /api/backup/daily` - Daily backup
+- `POST /api/backup/weekly` - Weekly snapshot
+- `POST /api/recovery/test` - Test recovery
+>>>>>>> origin/main
 
 ## Database Models
 
-The system uses the following data models:
-
-### Room
-
-```json
-{
-  "id": "INTEGER PRIMARY KEY",
-  "type": "TEXT",
-  "floor": "INTEGER",
-  "baseRate": "REAL",
-  "status": "TEXT (Available, Occupied, Cleaning)"
-}
-```
-
-### User
-
-```json
-{
-  "id": "INTEGER PRIMARY KEY",
-  "username": "TEXT UNIQUE",
-  "password": "TEXT",
-  "role": "TEXT (Admin, Manager, Receptionist, Guest)"
-}
-```
-
-### Reservation
-
-```json
-{
-  "id": "INTEGER PRIMARY KEY",
-  "roomId": "INTEGER",
-  "userId": "INTEGER",
-  "status": "TEXT (Confirmed, Cancelled, Completed, No-Show)",
-  "checkInDate": "DATE",
-  "checkOutDate": "DATE"
-}
-```
-
-### Payment
-
-```json
-{
-  "id": "INTEGER PRIMARY KEY",
-  "reservationId": "INTEGER",
-  "amount": "REAL",
-  "status": "TEXT (Authorized, Captured, Refunded, Failed)",
-  "gatewayAuthToken": "TEXT"
-}
-```
-
-### Invoice
-
-```json
-{
-  "id": "INTEGER PRIMARY KEY",
-  "reservationId": "INTEGER",
-  "totalAmount": "REAL",
-  "tax": "REAL",
-  "createdAt": "DATE"
-}
-```
-
-## Future Enhancements
-
-1. **Database Integration**: Replace mock database with SQLite3/PostgreSQL
-2. **Authentication**: Implement JWT-based authentication
-3. **Real Payment Gateway**: Integrate with PayPal or Stripe
-4. **Email Notifications**: Send confirmations and invoices via email
-5. **Mobile App**: Create a native mobile application
-6. **Advanced Analytics**: Machine learning for revenue optimization
-7. **Multi-language Support**: Support multiple languages
-8. **Cloud Deployment**: Deploy to AWS, Azure, or Google Cloud
-
-## Troubleshooting
-
-### Port Already in Use
-
-If port 3000 is already in use, modify the port in `api/server.js`:
-
-```javascript
-const port = 3001; // Change to any available port
-```
-
-### CORS Errors
-
-Ensure CORS middleware is enabled in the API server.
-
-### Database Connection Issues
-
-Make sure you have SQLite3 installed if switching from mock database.
-
-## Support & Contribution
-
-For issues or feature requests, please contact the development team.
-
-## License
-
-This project is licensed under the MIT License.
+- **Room**
+- **User**
+- **Reservation**
+- **Payment**
+- **Invoice**
+- **GuestService**
+- **HousekeepingTask**
+- **GuestReview**
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: May 2, 2026  
+**Version**: 1.1.0
+**Last Updated**: July 21, 2026
 **Status**: Production Ready

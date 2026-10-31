@@ -6,7 +6,7 @@
 
 **Document Type:** Software Requirements Specification
 
-**Version:** 1.0
+**Version:** 1.1
 
 **Date:** 2026-07-21
 
@@ -24,14 +24,14 @@ The requirements in this document use the keyword **shall** to indicate mandator
 
 ### 1.3 Scope
 
-The system is a hotel management platform that supports room inventory administration, reservations, payments, check-in/check-out operations, billing, reporting, security controls, and customer self-service booking. The current implementation uses a Node.js and Express.js backend, SQLite-backed persistence, and a browser-based frontend built with HTML, CSS, and JavaScript.
+The system is a hotel management platform that supports room inventory administration, reservations, payments, check-in/check-out operations, billing, reporting, security controls, customer self-service booking, guest special add-ons, housekeeping task management, and post-stay guest reviews.
 
 The system is intended to support the following user groups:
 
 - Hotel administrators who manage inventory, users, configuration, security, and reporting.
 - Managers who supervise rooms, reservations, pricing, and reports.
-- Front desk or staff users who perform operational tasks such as check-in, check-out, and charge posting.
-- Customers who search for rooms, create bookings, view bookings, and cancel eligible reservations.
+- Front desk or staff users who perform operational tasks such as check-in, check-out, charge posting, housekeeping management, and guest request fulfillment.
+- Customers who search for rooms, create bookings, view bookings, request add-on services, and submit ratings and reviews.
 
 ### 1.4 Definitions, Acronyms, and Abbreviations
 
@@ -44,6 +44,8 @@ The system is intended to support the following user groups:
 - **Reservation**: A system record representing a room booking or hotel stay
 - **Check-in**: The process of marking a guest as arrived and a room as occupied
 - **Check-out**: The process of marking a guest as departed and a room as cleaning
+- **Add-on / Special Request**: Extra guest service requested for a booking (e.g. Airport Transfer, Extra Bed)
+- **Housekeeping Task**: Room cleaning, maintenance, or inspection assignment
 
 ### 1.5 References
 
@@ -68,10 +70,8 @@ The system is a single-hotel management application composed of:
 
 - A backend API server that exposes REST endpoints.
 - A staff/admin web interface for operational management.
-- A customer web portal for online booking and booking self-service.
+- A customer web portal for online booking, add-on requests, and post-stay reviews.
 - Feature modules organized by business domain.
-
-The backend persists data in SQLite and also uses in-memory/session-based structures for authentication state and runtime coordination. The API provides both protected staff endpoints and public customer booking endpoints.
 
 ### 2.2 Product Functions
 
@@ -85,14 +85,15 @@ At a high level, the system shall:
 - Generate billing totals, invoices, and invoice exports.
 - Provide occupancy, revenue, and audit reporting.
 - Authenticate users, manage sessions and tokens, and support backup and recovery routines.
-- Allow customers to browse rooms, book rooms online, view reservations, and cancel eligible bookings.
+- Allow customers to browse rooms, book rooms online, view reservations, request add-on services, and leave post-stay ratings and reviews.
+- Manage housekeeping and maintenance tasks for rooms.
 
 ### 2.3 User Classes and Characteristics
 
 - **Administrator**: Full access to system configuration, user management, backups, recovery, and reports.
 - **Manager**: Access to room, pricing, reservation, reporting, and operational data.
-- **Staff/Receptionist**: Access to day-to-day operations such as reservation handling, check-in, check-out, charges, and invoicing.
-- **Customer/Guest**: Access to browsing rooms, booking, viewing bookings, and cancellation through the customer portal.
+- **Staff/Receptionist**: Access to day-to-day operations such as reservation handling, check-in, check-out, charges, housekeeping, guest service requests, and invoicing.
+- **Customer/Guest**: Access to browsing rooms, booking, viewing bookings, requesting add-ons, and leaving reviews through the customer portal.
 
 ### 2.4 Operating Environment
 
@@ -102,93 +103,51 @@ At a high level, the system shall:
 - Client environment: Modern browser with JavaScript enabled
 - Target deployment: Local or intranet-hosted web application
 
-### 2.5 Design and Implementation Constraints
-
-- The backend shall expose REST-style JSON endpoints.
-- Authentication shall support session-based access and token-based fallback.
-- Role-based authorization shall gate protected administrative and reporting features.
-- Customer booking functions shall remain accessible without staff login.
-- The current implementation relies on local filesystem and SQLite-backed data storage rather than a distributed cloud database.
-
-### 2.6 Assumptions and Dependencies
-
-- Room inventory data exists before reservations are created.
-- The browser client can reach the backend at `http://localhost:3000` in the current development setup.
-- Email-based lookup is used for customer booking retrieval.
-- Payment gateway and backup/recovery functions are implemented as internal workflow operations rather than integrations with external third-party services in the current version.
-
 ## 3. Specific Requirements
 
 ### 3.1 Feature 1: Inventory and System Configuration
-
-#### 3.1.1 Room Management
-
 - **FR-1.1** The system shall allow authorized users to add a room with room type, floor, base rate, and default availability status.
 - **FR-1.2** The system shall allow authorized users to list all rooms.
 - **FR-1.3** The system shall allow authorized users to update an existing room’s type, floor, and base rate.
 - **FR-1.4** The system shall allow authorized users to delete a room.
 - **FR-1.5** The system shall prevent room management actions by unauthorized users.
-
-#### 3.1.2 Pricing and Tax
-
 - **FR-1.6** The system shall calculate pricing totals using base rate and tax rate inputs.
 - **FR-1.7** The system shall allow authorized users to update tax settings.
-
-#### 3.1.3 User and Role Management
-
 - **FR-1.8** The system shall allow administrators to create users with username, password, and role.
 - **FR-1.9** The system shall prevent duplicate usernames.
-- **FR-1.10** The system shall validate passwords against the configured password policy before user creation.
-- **FR-1.11** The system shall list users for administrators.
-
-#### 3.1.4 System Verification
-
-- **FR-1.12** The system shall provide a system verification action that checks core configurations.
+- **FR-1.10** The system shall validate passwords against the configured password policy.
 
 ### 3.2 Feature 2: Reservation Engine
-
-- **FR-2.1** The system shall allow users to search available rooms by check-in and check-out dates.
-- **FR-2.2** The system shall return rooms currently available for reservation.
-- **FR-2.3** The system shall allow authenticated staff users to place a temporary hold on a room.
-- **FR-2.4** The system shall allow authenticated users to create a reservation for a room and date range.
-- **FR-2.5** The system shall store reservation status and timestamps.
-- **FR-2.6** The system shall allow authorized users to list all reservations.
-- **FR-2.7** The system shall allow authorized users to update reservation status.
-- **FR-2.8** The system shall allow authorized users to cancel reservations.
-- **FR-2.9** The system shall process refunds for eligible payments when a reservation is cancelled.
+- **FR-2.1** Search available rooms by check-in and check-out dates.
+- **FR-2.2** Hold rooms temporarily for staff workflows.
+- **FR-2.3** Create and store reservation status and details.
+- **FR-2.4** Support reservation cancellations and compute refunds based on policy.
 
 ### 3.3 Feature 3: Transaction and Payment Processing
-
-- **FR-3.1** The system shall allow authenticated users to process a payment for a reservation.
-- **FR-3.2** The system shall allow payment authorization using a generated gateway token.
-- **FR-3.3** The system shall store financial records for transactions.
-- **FR-3.4** The system shall allow refunds for authorized or completed payments according to business rules.
-- **FR-3.5** The system shall persist payment status, amount, and refund information.
+- **FR-3.1** Process payments for reservations.
+- **FR-3.2** Store gateway authorization tokens.
+- **FR-3.3** Handle refunds and update payment records.
 
 ### 3.4 Feature 4: Check-In and Check-Out
-
-- **FR-4.1** The system shall allow staff users to assign a room to a reservation during check-in preparation.
-- **FR-4.2** The system shall mark a room as occupied during check-in.
-- **FR-4.3** The system shall mark a room as cleaning during check-out.
-- **FR-4.4** The system shall allow staff users to post additional charges to a reservation.
-- **FR-4.5** The system shall synchronize room status changes with the backend data store.
+- **FR-4.1** Assign room to reservation upon arrival.
+- **FR-4.2** Mark room status as Occupied at check-in and Cleaning at check-out.
+- **FR-4.3** Post additional charges to guest accounts.
 
 ### 3.5 Feature 5: Billing and Invoicing
-
-- **FR-5.1** The system shall calculate billing totals from subtotal and tax rate values.
-- **FR-5.2** The system shall generate an invoice for a reservation.
-- **FR-5.3** The system shall store invoice records with reservation reference, total amount, tax, and creation timestamp.
-- **FR-5.4** The system shall allow invoice export for authorized users.
+- **FR-5.1** Calculate subtotals, tax, and final billing totals.
+- **FR-5.2** Generate and export invoices.
 
 ### 3.6 Feature 6: Reporting and Analytics
-
-- **FR-6.1** The system shall provide an occupancy dashboard showing total rooms, occupied rooms, available rooms, and occupancy rate.
-- **FR-6.2** The system shall provide revenue reporting with a selectable timeframe parameter.
-- **FR-6.3** The system shall provide an audit log viewer for authorized users.
-- **FR-6.4** The system shall restrict reporting access to authorized roles only.
+- **FR-6.1** Provide occupancy dashboard metrics.
+- **FR-6.2** Provide daily, weekly, or monthly revenue reports.
+- **FR-6.3** Provide audit log tracking.
 
 ### 3.7 Feature 7: Security and Infrastructure
+- **FR-7.1** Authenticate users with passwords and session/token support.
+- **FR-7.2** Enforce RBAC permissions.
+- **FR-7.3** Execute daily backups, weekly snapshots, and recovery testing.
 
+<<<<<<< HEAD
 - **FR-7.1** The system shall support user login with username and password.
 - **FR-7.2** The system shall generate an authentication token on successful login.
 - **FR-7.3** The system shall support server-side sessions.
@@ -219,69 +178,40 @@ At a high level, the system shall:
 - **FR-8.9** The system shall allow customers to cancel eligible bookings.
 - **FR-8.10** The system shall calculate and display a refund amount based on cancellation timing.
 - **FR-8.11** The system shall process refunds automatically for online payments when a booking is cancelled.
+=======
+### 3.8 Feature 8: Guest Services, Housekeeping & Feedback Management
+- **FR-8.1** The system shall allow customers and staff to create special add-on service requests (Airport Transfer, Extra Bed, Late Check-Out, Breakfast Package) associated with a booking confirmation number.
+- **FR-8.2** The system shall allow staff to view and update the status of guest service requests (Pending, Approved, Fulfilled, Rejected).
+- **FR-8.3** The system shall allow staff users to create housekeeping and maintenance tasks for specific rooms with priority levels and notes.
+- **FR-8.4** The system shall allow staff users to list and update housekeeping task statuses (Pending, In Progress, Completed, Cancelled).
+- **FR-8.5** The system shall allow customers to submit post-stay ratings (1-5 stars) and review comments using their confirmation number.
+- **FR-8.6** The system shall display aggregated guest review metrics (average star rating and total review count) and individual guest reviews.
+>>>>>>> origin/main
 
 ## 4. External Interface Requirements
 
 ### 4.1 User Interface Requirements
-
-#### 4.1.1 Staff/Admin Web Interface
-
-- The interface shall provide a dashboard-style layout for inventory, reservations, payments, check-in/check-out, billing, reporting, and security tasks.
-- The interface shall support forms, tables, status badges, and notification messages.
-- The interface shall be responsive for desktop and mobile browser widths.
-
-#### 4.1.2 Customer Web Portal
-
-- The interface shall provide a room browsing view.
-- The interface shall provide a booking form and booking confirmation experience.
-- The interface shall provide a bookings lookup and cancellation experience.
-- The interface shall present price breakdowns including tax and totals.
+- Staff portal shall include dedicated navigation for Guest Services, Housekeeping & Reviews.
+- Customer portal shall provide dedicated views for requesting add-on services and submitting post-stay ratings/reviews.
 
 ### 4.2 Software Interface Requirements
+The backend shall expose REST JSON endpoints for Feature 8:
+- `POST /api/customer/bookings/:confirmationNumber/services`
+- `GET /api/customer/bookings/:confirmationNumber/services`
+- `GET /api/services/requests`
+- `PUT /api/services/requests/:id/status`
+- `GET /api/housekeeping/tasks`
+- `POST /api/housekeeping/tasks`
+- `PUT /api/housekeeping/tasks/:id`
+- `POST /api/customer/bookings/:confirmationNumber/review`
+- `GET /api/customer/reviews`
 
-The backend shall expose JSON endpoints consistent with the current implementation, including but not limited to:
-
-- `/api/rooms`
-- `/api/pricing/calculate`
-- `/api/pricing/tax-settings`
-- `/api/users`
-- `/api/system/verify`
-- `/api/reservations`
-- `/api/reservations/available-rooms`
-- `/api/reservations/hold-room`
-- `/api/payments`
-- `/api/payments/authorize`
-- `/api/payments/:id/refund`
-- `/api/check-in`
-- `/api/check-out`
-- `/api/check-in/assign-room`
-- `/api/charges`
-- `/api/billing/calculate`
-- `/api/invoices`
-- `/api/invoices/:id/export`
-- `/api/reporting/occupancy`
-- `/api/reporting/revenue`
-- `/api/reporting/audit-logs`
-- `/api/auth/login`
-- `/api/auth/logout`
-- `/api/auth/me`
-- `/api/backup/daily`
-- `/api/backup/weekly`
-- `/api/recovery/test`
-- `/api/customer/bookings`
-- `/api/customer/bookings/:confirmationNumber`
-- `/api/customer/bookings/:confirmationNumber/cancel`
-
-### 4.3 Communication Interfaces
-
-- The system shall communicate using HTTP over localhost in the current development setup.
-- The system shall exchange JSON request and response bodies for API operations.
-- The browser client shall use the Fetch API for API communication.
-
-## 5. Other Nonfunctional Requirements and Data Rules
+## 5. Nonfunctional Requirements and Data Rules
 
 ### 5.1 Core Data Entities
+- Room, User, Reservation, Payment, Invoice, AuditLog, GuestService, HousekeepingTask, GuestReview.
 
+<<<<<<< HEAD
 The system shall maintain records for at least the following entities:
 
 - Rooms
@@ -459,3 +389,7 @@ The system shall be considered functionally complete when the following conditio
 - `GET /api/customer/bookings`
 - `GET /api/customer/bookings/:confirmationNumber`
 - `POST /api/customer/bookings/:confirmationNumber/cancel`
+=======
+## 6. Acceptance Summary
+The system is functionally complete when staff and customer users can interact with all 8 features seamlessly.
+>>>>>>> origin/main
