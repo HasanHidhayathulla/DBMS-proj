@@ -197,7 +197,16 @@ At a high level, the system shall:
 - **FR-7.6** The system shall restrict protected endpoints using authentication and role checks.
 - **FR-7.7** The system shall support daily backup, weekly backup snapshot, and database recovery test actions for administrators.
 
-### 3.8 Customer Booking Portal
+### 3.8 Feature 8: Housekeeping and Room Maintenance Management
+
+- **FR-8.1** The system shall automatically generate a housekeeping cleaning task upon guest check-out.
+- **FR-8.2** The system shall allow authorized staff to assign cleaning tasks to personnel with priority and type specifications.
+- **FR-8.3** The system shall allow authorized users to mark a cleaned and inspected room as "Available".
+- **FR-8.4** The system shall allow authorized users to report room maintenance defects across categories (Plumbing, Electrical, HVAC, Furniture, Other) and set the room status to "Maintenance".
+- **FR-8.5** The system shall allow authorized users to resolve maintenance requests and return the room status to "Available".
+- **FR-8.6** The system shall provide real-time housekeeping statistics including rooms pending cleaning, under maintenance, and ready for occupancy.
+
+### 3.9 Customer Booking Portal
 
 - **FR-8.1** The system shall allow customers to search rooms by check-in and check-out dates.
 - **FR-8.2** The system shall allow customers to filter room selection by room type in the portal UI.
@@ -281,6 +290,8 @@ The system shall maintain records for at least the following entities:
 - Payments
 - Invoices
 - Audit logs
+- Housekeeping tasks
+- Maintenance requests
 
 ### 5.2 Data Model Requirements
 
@@ -432,7 +443,17 @@ The system shall be considered functionally complete when the following conditio
 - `POST /api/backup/weekly`
 - `POST /api/recovery/test`
 
-### 8.5 Customer Portal
+### 8.5 Housekeeping and Maintenance
+
+- `GET /api/housekeeping/rooms`
+- `GET /api/housekeeping/tasks`
+- `POST /api/housekeeping/assign`
+- `POST /api/housekeeping/clean`
+- `POST /api/maintenance`
+- `GET /api/maintenance`
+- `PUT /api/maintenance/:id/resolve`
+
+### 8.6 Customer Portal
 
 - `POST /api/customer/bookings`
 - `GET /api/customer/bookings`

@@ -32,7 +32,9 @@ function init() {
     `CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY, reservationId INTEGER, amount REAL, status TEXT, gatewayAuthToken TEXT, confirmationNumber TEXT, method TEXT, transactionId TEXT, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS invoices (id INTEGER PRIMARY KEY, reservationId INTEGER, totalAmount REAL, tax REAL, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, userId INTEGER, data TEXT, expiresAt INTEGER);`,
-    `CREATE TABLE IF NOT EXISTS auditLogs (id INTEGER PRIMARY KEY, action TEXT, details TEXT, timestamp TEXT);`
+    `CREATE TABLE IF NOT EXISTS auditLogs (id INTEGER PRIMARY KEY, action TEXT, details TEXT, timestamp TEXT);`,
+    `CREATE TABLE IF NOT EXISTS housekeepingTasks (id INTEGER PRIMARY KEY, roomId INTEGER, assignedTo TEXT, taskType TEXT, priority TEXT, status TEXT, notes TEXT, createdAt TEXT, completedAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS maintenanceRequests (id INTEGER PRIMARY KEY, roomId INTEGER, reportedBy TEXT, issueCategory TEXT, description TEXT, priority TEXT, status TEXT, resolutionNotes TEXT, createdAt TEXT, resolvedAt TEXT);`
   ];
 
   db.serialize(() => {

@@ -137,6 +137,9 @@ function switchTab(tabName) {
     const selectedTab = document.getElementById(tabName);
     if (selectedTab) {
         selectedTab.classList.add('active');
+        if (tabName === 'housekeeping') {
+            loadHousekeeping();
+        }
     }
 
     // Add active class to clicked button if event provided
@@ -428,6 +431,161 @@ function postCharge(event) {
             event.target.reset();
         }
     });
+}
+
+// ========== FEATURE 8: HOUSEKEEPING & MAINTENANCE ==========
+
+function loadHousekeeping() {
+    // Load room stats
+    apiCall('/housekeeping/rooms').then(data => {
+        if (data.success && data.stats) {
+            document.getElementById('hk-cleaning-count').textContent = data.stats.cleaning;
+            document.getElementById('hk-maintenance-count').textContent = data.stats.maintenance;
+            document.getElementById('hk-available-count').textContent = data.stats.available;
+        }
+    });
+
+    // Load tasks
+    apiCall('/housekeeping/tasks').then(data => {
+        if (data.success) {
+            const tbody = document.getElementById('housekeeping-tasks-list');
+            tbody.innerHTML = '';
+            if (data.tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No housekeeping tasks found</td></tr>';
+                return;
+            }
+            data.tasks.forEach(task => {
+                const isCompleted = task.status === 'Completed';
+                const actionBtn = isCompleted
+                    ? '<span style="color:#2ecc71; font-weight:bold;">Done</span>'
+                    : `<button onclick="quickCleanRoom(${task.roomId})" class="btn btn-success" style="font-size:12px; padding:4px 8px;">Mark Done</button>
+                       <button onclick="reassignTask(${task.id})" class="btn btn-primary" style="font-size:12px; padding:4px 8px; margin-left:4px;">Assign</button>`;
+
+                const row = `
+                    <tr>
+                        <td>${task.id}</td>
+                        <td>Room ${task.roomId}</td>
+                        <td>${task.taskType}</td>
+                        <td>${task.assignedTo || 'Unassigned'}</td>
+                        <td><span class="status-badge priority-${(task.priority || 'medium').toLowerCase()}">${task.priority}</span></td>
+                        <td><span class="status-badge status-${(task.status || 'pending').toLowerCase()}">${task.status}</span></td>
+                        <td>${actionBtn}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+    });
+
+    loadMaintenanceRequests();
+}
+
+function quickCleanRoom(roomId) {
+    document.getElementById('hkCleanRoomId').value = roomId;
+    document.getElementById('hkCleanNotes').value = 'Cleaned and sanitized';
+    markRoomCleaned(new Event('submit'));
+}
+
+function reassignTask(taskId) {
+    const staffName = prompt('Enter staff member name to assign:');
+    if (staffName) {
+        apiCall('/housekeeping/assign', 'POST', { taskId, assignedTo: staffName }).then(data => {
+            if (data.success) {
+                showNotification('Housekeeping task assigned successfully!', 'success');
+                loadHousekeeping();
+            } else {
+                showNotification(data.message || 'Failed to assign task', 'error');
+            }
+        });
+    }
+}
+
+function markRoomCleaned(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const roomId = parseInt(document.getElementById('hkCleanRoomId').value);
+    const notes = document.getElementById('hkCleanNotes').value;
+
+    apiCall('/housekeeping/clean', 'POST', { roomId, notes }).then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            document.getElementById('hkCleanRoomId').value = '';
+            document.getElementById('hkCleanNotes').value = '';
+            loadHousekeeping();
+            loadRooms();
+            loadOccupancy();
+        } else {
+            showNotification(data.message || 'Failed to mark room cleaned', 'error');
+        }
+    });
+}
+
+function reportMaintenance(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const roomId = parseInt(document.getElementById('maintRoomId').value);
+    const issueCategory = document.getElementById('maintCategory').value;
+    const priority = document.getElementById('maintPriority').value;
+    const description = document.getElementById('maintDescription').value;
+
+    apiCall('/maintenance', 'POST', { roomId, issueCategory, priority, description }).then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            document.getElementById('maintRoomId').value = '';
+            document.getElementById('maintDescription').value = '';
+            loadHousekeeping();
+            loadRooms();
+            loadOccupancy();
+        } else {
+            showNotification(data.message || 'Failed to report maintenance issue', 'error');
+        }
+    });
+}
+
+function loadMaintenanceRequests() {
+    apiCall('/maintenance').then(data => {
+        if (data.success) {
+            const tbody = document.getElementById('maintenance-tickets-list');
+            tbody.innerHTML = '';
+            if (data.requests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No maintenance tickets found</td></tr>';
+                return;
+            }
+            data.requests.forEach(ticket => {
+                const isResolved = ticket.status === 'Resolved';
+                const actionBtn = isResolved
+                    ? '<span style="color:#2ecc71; font-weight:bold;">Resolved</span>'
+                    : `<button onclick="resolveMaintenanceTicket(${ticket.id})" class="btn btn-warning" style="font-size:12px; padding:4px 8px;">Resolve</button>`;
+
+                const row = `
+                    <tr>
+                        <td>#${ticket.id}</td>
+                        <td>Room ${ticket.roomId}</td>
+                        <td>${ticket.issueCategory}</td>
+                        <td>${ticket.description}</td>
+                        <td><span class="status-badge priority-${(ticket.priority || 'medium').toLowerCase()}">${ticket.priority}</span></td>
+                        <td><span class="status-badge status-${(ticket.status || 'reported').toLowerCase()}">${ticket.status}</span></td>
+                        <td>${actionBtn}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+    });
+}
+
+function resolveMaintenanceTicket(ticketId) {
+    const notes = prompt('Enter resolution notes:', 'Repairs completed and tested');
+    if (notes) {
+        apiCall(`/maintenance/${ticketId}/resolve`, 'PUT', { resolutionNotes: notes }).then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                loadHousekeeping();
+                loadRooms();
+                loadOccupancy();
+            } else {
+                showNotification(data.message || 'Failed to resolve ticket', 'error');
+            }
+        });
+    }
 }
 
 // ========== FEATURE 5: BILLING ==========

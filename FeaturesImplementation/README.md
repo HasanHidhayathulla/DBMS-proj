@@ -13,6 +13,7 @@ FeaturesImplementation/
 ├── Feature5_Billing/            # Billing and invoicing
 ├── Feature6_Reporting/          # Reports and analytics
 ├── Feature7_Security/           # Security and infrastructure
+├── Feature8_Housekeeping/       # Housekeeping & room maintenance
 ├── Shared/                      # Shared database models
 ├── api/                         # Backend API server
 ├── public/                      # Frontend HTML/CSS/JS
@@ -66,6 +67,13 @@ FeaturesImplementation/
 - **Authentication System**: Secure login with password policies
 - **Automated Backup Routine**: Daily incremental and weekly full backups
 - **Database Recovery Testing**: Verify backup restoration
+
+### Feature 8: Housekeeping & Room Maintenance Management (Operational Module)
+
+- **Housekeeping Task Scheduling**: Automatically create cleaning tasks upon guest checkout and assign staff
+- **Room Turnover & Inspection Flow**: Mark cleaned and inspected rooms as "Available"
+- **Maintenance & Defect Tracking**: Report room issues (HVAC, plumbing, electrical, etc.), set rooms out of order, and restore them upon repair
+- **Housekeeping Dashboard**: Real-time visibility into rooms pending cleaning, in maintenance, and available
 
 ## Installation & Setup
 
@@ -171,6 +179,16 @@ http://localhost:3000
 - `POST /api/backup/daily` - Perform daily backup
 - `POST /api/backup/weekly` - Perform weekly snapshot
 - `POST /api/recovery/test` - Test database recovery
+
+### Housekeeping & Maintenance
+
+- `GET /api/housekeeping/rooms` - Get rooms grouped by housekeeping status and statistics
+- `GET /api/housekeeping/tasks` - List all housekeeping tasks
+- `POST /api/housekeeping/assign` - Create or assign cleaning tasks
+- `POST /api/housekeeping/clean` - Mark room cleaned, inspected, and available
+- `POST /api/maintenance` - Report room maintenance issue (sets room to Maintenance)
+- `GET /api/maintenance` - List all maintenance tickets
+- `PUT /api/maintenance/:id/resolve` - Resolve maintenance ticket and restore room to Available
 
 ## Usage Guide
 

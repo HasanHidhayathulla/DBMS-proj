@@ -58,3 +58,12 @@ While not a "business process" in the DFD, these are critical technical ToDos fo
 - **ToDo: Authentication System:** Implement secure login using usernames and passwords with strict password policies.
 - **ToDo: Automated Backup Routine:** Script the database to perform daily incremental backups and weekly full "snapshots".
 - **ToDo: Database Recovery Testing:** Establish a monthly routine to verify that backup data can be successfully restored.
+
+### Feature 8: Housekeeping & Room Maintenance Management (Operational Module)
+
+This feature closes the operational loop in traditional hotel procedures, transitioning rooms from checkout cleaning and handling room defects.
+
+- **ToDo: Housekeeping Task Scheduling:** Automatically generate cleaning assignments upon guest check-out and allow manual assignment of routine/deep cleaning tasks.
+- **ToDo: Room Turnover & Inspection Flow:** Allow housekeeping supervisors and staff to inspect cleaned rooms and release them back to "Available" status.
+- **ToDo: Maintenance & Out-of-Order Tracking:** Log room issues across categories (HVAC, plumbing, electrical, furniture), set rooms to "Maintenance" status, and restore availability once resolved.
+- **ToDo: Housekeeping Operations Dashboard:** Display real-time KPI metrics for rooms pending cleaning, under maintenance, and ready for occupancy.

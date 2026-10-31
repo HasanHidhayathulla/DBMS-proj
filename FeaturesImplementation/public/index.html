@@ -22,6 +22,7 @@
             <button class="nav-btn" onclick="switchTab('reservations')">Reservations</button>
             <button class="nav-btn" onclick="switchTab('payments')">Payments</button>
             <button class="nav-btn" onclick="switchTab('check-in-out')">Check-In/Out</button>
+            <button class="nav-btn" onclick="switchTab('housekeeping')">Housekeeping</button>
             <button class="nav-btn" onclick="switchTab('billing')">Billing</button>
             <button class="nav-btn" onclick="switchTab('reporting')">Reports</button>
             <button class="nav-btn" onclick="switchTab('security')">Security</button>
@@ -221,6 +222,97 @@
                         <input type="number" id="chargeAmount" placeholder="Amount ($)" step="0.01" required>
                         <button type="submit" class="btn btn-primary">Post Charge</button>
                     </form>
+                </div>
+            </div>
+
+            <!-- HOUSEKEEPING & MAINTENANCE TAB -->
+            <div id="housekeeping" class="tab-content">
+                <h2>Housekeeping & Room Maintenance</h2>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>Cleaning Queue</h3>
+                        <div id="hk-cleaning-count" style="font-size: 24px; font-weight: bold; color: #f39c12;">0</div>
+                        <p>Rooms awaiting cleaning</p>
+                    </div>
+                    <div class="card">
+                        <h3>Under Maintenance</h3>
+                        <div id="hk-maintenance-count" style="font-size: 24px; font-weight: bold; color: #e74c3c;">0</div>
+                        <p>Rooms out of order</p>
+                    </div>
+                    <div class="card">
+                        <h3>Available & Ready</h3>
+                        <div id="hk-available-count" style="font-size: 24px; font-weight: bold; color: #2ecc71;">0</div>
+                        <p>Rooms inspected & clean</p>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Mark Room Cleaned & Ready</h3>
+                    <form onsubmit="markRoomCleaned(event)">
+                        <input type="number" id="hkCleanRoomId" placeholder="Room ID" required>
+                        <input type="text" id="hkCleanNotes" placeholder="Inspection Notes (e.g., Linens changed, sanitized)">
+                        <button type="submit" class="btn btn-success">Mark Clean & Ready</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Report Room Maintenance Issue</h3>
+                    <form onsubmit="reportMaintenance(event)">
+                        <input type="number" id="maintRoomId" placeholder="Room ID" required>
+                        <select id="maintCategory" required>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="HVAC">HVAC / Air Conditioning</option>
+                            <option value="Furniture">Furniture & Fixtures</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <select id="maintPriority" required>
+                            <option value="Low">Low Priority</option>
+                            <option value="Medium" selected>Medium Priority</option>
+                            <option value="High">High Priority</option>
+                            <option value="Urgent">Urgent Priority</option>
+                        </select>
+                        <input type="text" id="maintDescription" placeholder="Issue Description (e.g. AC leaking)" required>
+                        <button type="submit" class="btn btn-danger">Report Issue</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Active Housekeeping Tasks</h3>
+                    <button onclick="loadHousekeeping()" class="btn btn-primary">Refresh Tasks</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Task ID</th>
+                                <th>Room ID</th>
+                                <th>Type</th>
+                                <th>Assigned To</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="housekeeping-tasks-list"></tbody>
+                    </table>
+                </div>
+
+                <div class="list-section">
+                    <h3>Maintenance Tickets</h3>
+                    <button onclick="loadMaintenanceRequests()" class="btn btn-primary">Refresh Tickets</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Ticket ID</th>
+                                <th>Room ID</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="maintenance-tickets-list"></tbody>
+                    </table>
                 </div>
             </div>
 

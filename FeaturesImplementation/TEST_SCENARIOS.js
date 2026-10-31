@@ -192,6 +192,36 @@ function testAuthenticationFlow() {
     console.log('\n✅ All Authentication Tests Passed!\n');
 }
 
+// Scenario 10: Housekeeping & Room Maintenance Management
+function testHousekeepingAndMaintenance() {
+    console.log('=== TEST SCENARIO 10: Housekeeping & Room Maintenance Management ===');
+    const housekeepingManager = require('./Feature8_Housekeeping/HousekeepingManager');
+    const maintenanceTracker = require('./Feature8_Housekeeping/MaintenanceTracker');
+
+    console.log('Testing automated departure cleaning creation...');
+    const cleaningTask = housekeepingManager.createCleaningTask(4, 'Departure Cleaning', 'High', 'Guest John Doe checked out');
+    console.log(`✓ Cleaning task created for Room 4 (Status: ${cleaningTask.status}, Priority: ${cleaningTask.priority})`);
+
+    console.log('Testing task assignment to housekeeping staff...');
+    const assignedTask = housekeepingManager.assignCleaningTask(1, 'Maria (Housekeeping)');
+    console.log(`✓ Task assigned to ${assignedTask.assignedTo} (Status: ${assignedTask.status})`);
+
+    console.log('Testing cleaning completion and inspection...');
+    const cleanResult = housekeepingManager.completeCleaning(4, 'Room sanitized, bed made, towels replaced');
+    console.log(`✓ Room 4 inspected and marked "${cleanResult.roomStatus}" at ${cleanResult.completedAt}`);
+
+    console.log('Testing room maintenance defect logging...');
+    const maintReport = maintenanceTracker.reportMaintenanceIssue(2, 'Front Desk Clerk', 'HVAC', 'AC unit leaking water', 'High');
+    console.log(`✓ Maintenance logged for Room 2: [${maintReport.issueCategory}] ${maintReport.description}`);
+    console.log('✓ Room 2 status changed to "Maintenance" (out of order)');
+
+    console.log('Testing maintenance resolution & return to inventory...');
+    const maintResolved = maintenanceTracker.resolveMaintenanceIssue(1, 'Replaced AC drainage pipe and tested');
+    console.log(`✓ Maintenance ticket #1 resolved: "${maintResolved.resolutionNotes}"`);
+    console.log(`✓ Room 2 restored to "${maintResolved.roomStatus}" status in inventory`);
+    console.log('✅ All Housekeeping & Maintenance Tests Passed!\n');
+}
+
 // Run all test scenarios
 function runAllTests() {
     console.log('\n╔════════════════════════════════════════════════════════════╗');
@@ -207,6 +237,7 @@ function runAllTests() {
     testReporting();
     testSecurityOperations();
     testAuthenticationFlow();
+    testHousekeepingAndMaintenance();
     
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║   All Test Scenarios Completed Successfully! ✓             ║');

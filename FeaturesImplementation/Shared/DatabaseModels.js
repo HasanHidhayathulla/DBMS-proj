@@ -45,4 +45,31 @@ const Invoice = {
   createdAt: 'DATE'
 };
 
-module.exports = { Room, User, Reservation, Payment, Invoice };
+// HousekeepingTask table model
+const HousekeepingTask = {
+  id: 'INTEGER PRIMARY KEY',
+  roomId: 'INTEGER',
+  assignedTo: 'TEXT', // Staff member name or user reference
+  taskType: 'TEXT', // Departure Cleaning, Daily Cleaning, Deep Clean, Inspection
+  priority: 'TEXT', // Low, Medium, High, Urgent
+  status: 'TEXT', // Pending, In_Progress, Completed
+  notes: 'TEXT',
+  createdAt: 'TEXT',
+  completedAt: 'TEXT'
+};
+
+// MaintenanceRequest table model
+const MaintenanceRequest = {
+  id: 'INTEGER PRIMARY KEY',
+  roomId: 'INTEGER',
+  reportedBy: 'TEXT',
+  issueCategory: 'TEXT', // Plumbing, Electrical, HVAC, Furniture, Other
+  description: 'TEXT',
+  priority: 'TEXT', // Low, Medium, High, Urgent
+  status: 'TEXT', // Reported, In_Progress, Resolved
+  resolutionNotes: 'TEXT',
+  createdAt: 'TEXT',
+  resolvedAt: 'TEXT'
+};
+
+module.exports = { Room, User, Reservation, Payment, Invoice, HousekeepingTask, MaintenanceRequest };
