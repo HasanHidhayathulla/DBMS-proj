@@ -23,8 +23,6 @@ function hashPassword(password) {
 }
 
 function init() {
-  // Create minimal tables used by the system. These are intentionally simple
-  // and can be expanded later to match Shared/DatabaseModels.js.
   const queries = [
     `CREATE TABLE IF NOT EXISTS rooms (id INTEGER PRIMARY KEY, type TEXT, floor INTEGER, baseRate REAL, status TEXT);`,
     `CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT, role TEXT);`,
@@ -32,7 +30,10 @@ function init() {
     `CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY, reservationId INTEGER, amount REAL, status TEXT, gatewayAuthToken TEXT, confirmationNumber TEXT, method TEXT, transactionId TEXT, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS invoices (id INTEGER PRIMARY KEY, reservationId INTEGER, totalAmount REAL, tax REAL, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, userId INTEGER, data TEXT, expiresAt INTEGER);`,
-    `CREATE TABLE IF NOT EXISTS auditLogs (id INTEGER PRIMARY KEY, action TEXT, details TEXT, timestamp TEXT);`
+    `CREATE TABLE IF NOT EXISTS auditLogs (id INTEGER PRIMARY KEY, action TEXT, details TEXT, timestamp TEXT);`,
+    `CREATE TABLE IF NOT EXISTS guest_services (id INTEGER PRIMARY KEY, confirmationNumber TEXT, serviceType TEXT, details TEXT, cost REAL, status TEXT, createdAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS housekeeping_tasks (id INTEGER PRIMARY KEY, roomId INTEGER, taskType TEXT, priority TEXT, status TEXT, assignedTo TEXT, notes TEXT, createdAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS guest_reviews (id INTEGER PRIMARY KEY, confirmationNumber TEXT, rating INTEGER, comment TEXT, createdAt TEXT);`
   ];
 
   db.serialize(() => {

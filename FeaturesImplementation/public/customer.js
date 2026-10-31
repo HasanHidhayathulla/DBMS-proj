@@ -4,49 +4,52 @@ const API_BASE_URL = 'http://localhost:3000/api';
 const TAX_RATE = 0.08; // 8% tax
 
 // State Management
-let currentUser = null;
 let selectedRoom = null;
 let selectedPaymentMethod = null;
 let pendingCancellation = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    // Set minimum date to today
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('searchCheckIn').min = today;
-    document.getElementById('searchCheckOut').min = today;
+    const searchCheckIn = document.getElementById('searchCheckIn');
+    const searchCheckOut = document.getElementById('searchCheckOut');
+    if (searchCheckIn) searchCheckIn.min = today;
+    if (searchCheckOut) searchCheckOut.min = today;
     
-    // Load initial data
     loadMyBookings();
+    loadCustomerReviews();
 });
 
 // ========== TAB SWITCHING ==========
 function switchCustomerTab(tabName) {
-    // Hide all tabs
     document.querySelectorAll('.customer-tab').forEach(tab => {
         tab.classList.remove('active');
     });
     
-    // Remove active class from all buttons
     document.querySelectorAll('.customer-nav .nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    // Show selected tab
     const tab = document.getElementById(tabName);
     if (tab) {
         tab.classList.add('active');
-        event.target.classList.add('active');
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
+    }
+
+    if (tabName === 'services-reviews') {
+        loadCustomerReviews();
     }
 }
 
 // ========== MESSAGE DISPLAY ==========
 function showMessage(text, type = 'info') {
     const messageDiv = document.getElementById('message');
+    if (!messageDiv) return;
     messageDiv.textContent = text;
     messageDiv.className = `message ${type}`;
     
-    // Auto-hide after 5 seconds
     setTimeout(() => {
         messageDiv.className = 'message';
     }, 5000);
@@ -63,13 +66,11 @@ function searchRooms() {
         return;
     }
     
-    // Validate dates
     if (new Date(checkIn) >= new Date(checkOut)) {
         showMessage('Check-out date must be after check-in date', 'error');
         return;
     }
     
-    // Fetch available rooms
     const query = `?checkInDate=${checkIn}&checkOutDate=${checkOut}${roomType ? '&roomType=' + roomType : ''}`;
     
     fetch(`${API_BASE_URL}/reservations/available-rooms${query}`)
@@ -149,20 +150,16 @@ function getRoomEmoji(roomType) {
 function openBookingModal(roomId, roomType, baseRate, checkIn, checkOut, nights) {
     selectedRoom = { id: roomId, type: roomType, baseRate: baseRate };
     
-    // Populate form
     document.getElementById('bookingRoomType').value = roomType;
     document.getElementById('bookingCheckIn').value = checkIn;
     document.getElementById('bookingCheckOut').value = checkOut;
     
-    // Calculate pricing
     updateBookingPrice(baseRate, nights);
     
-    // Reset payment method
     selectedPaymentMethod = null;
     document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
     document.getElementById('onlinePaymentForm').classList.remove('show');
     
-    // Show modal
     document.getElementById('bookingModal').classList.add('show');
 }
 
@@ -187,11 +184,9 @@ function updateBookingPrice(baseRate, nights) {
 function selectPaymentMethod(method) {
     selectedPaymentMethod = method;
     
-    // Update UI
     document.getElementById('option-online').classList.toggle('selected', method === 'online');
     document.getElementById('option-cash').classList.toggle('selected', method === 'cash');
     
-    // Show/hide payment form
     const form = document.getElementById('onlinePaymentForm');
     if (method === 'online') {
         form.classList.add('show');
@@ -208,7 +203,6 @@ function submitBooking(event) {
         return;
     }
     
-    // Validate required fields
     const name = document.getElementById('bookingName').value;
     const email = document.getElementById('bookingEmail').value;
     const phone = document.getElementById('bookingPhone').value;
@@ -218,7 +212,6 @@ function submitBooking(event) {
         return;
     }
     
-    // If online payment, validate card details
     if (selectedPaymentMethod === 'online') {
         const cardNumber = document.getElementById('cardNumber').value;
         const cardExpiry = document.getElementById('cardExpiry').value;
@@ -230,7 +223,6 @@ function submitBooking(event) {
         }
     }
     
-    // Create booking
     createBooking(name, email, phone);
 }
 
@@ -240,6 +232,8 @@ function createBooking(name, email, phone) {
     const totalPriceText = document.getElementById('totalPrice').textContent;
     const totalPrice = parseFloat(totalPriceText.replace('$', ''));
     
+    localStorage.setItem('customerEmail', email);
+
     const bookingData = {
         roomId: selectedRoom.id,
         customerName: name,
@@ -254,7 +248,6 @@ function createBooking(name, email, phone) {
         cardCVV: selectedPaymentMethod === 'online' ? document.getElementById('cardCVV').value : null
     };
     
-    // Show loading
     showMessage('Processing your booking...', 'info');
     
     fetch(`${API_BASE_URL}/customer/bookings`, {
@@ -268,7 +261,6 @@ function createBooking(name, email, phone) {
             showMessage(`✓ Booking successful! Confirmation #: ${data.confirmation}`, 'success');
             closeBookingModal();
             
-            // Show booking details
             setTimeout(() => {
                 alert(`
 Booking Confirmed!
@@ -283,10 +275,9 @@ Payment: ${selectedPaymentMethod === 'online' ? 'Online' : 'Cash at Hotel'}
 A confirmation email has been sent to ${email}
                 `);
                 
-                // Refresh bookings
                 loadMyBookings();
                 switchCustomerTab('mybookings');
-            }, 1000);
+            }, 500);
         } else {
             showMessage(data.message || 'Booking failed. Please try again.', 'error');
         }
@@ -299,11 +290,12 @@ A confirmation email has been sent to ${email}
 
 // ========== MY BOOKINGS ==========
 function loadMyBookings() {
-    // Get email from localStorage
     let email = localStorage.getItem('customerEmail');
+    const bookingsList = document.getElementById('bookingsList');
+    if (!bookingsList) return;
     
     if (!email) {
-        document.getElementById('bookingsList').innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Complete a booking to view your reservations here.</p>';
+        bookingsList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Complete a booking to view your reservations here.</p>';
         return;
     }
     
@@ -313,7 +305,7 @@ function loadMyBookings() {
             if (data.success && data.bookings) {
                 displayMyBookings(data.bookings, email);
             } else {
-                document.getElementById('bookingsList').innerHTML = '<p style="text-align: center; color: #666;">No bookings found</p>';
+                bookingsList.innerHTML = '<p style="text-align: center; color: #666;">No bookings found</p>';
             }
         })
         .catch(error => {
@@ -346,12 +338,12 @@ function displayMyBookings(bookings, email) {
             
             <div class="reservation-details">
                 <div class="detail-row">
-                    <span class="detail-label">Room Type:</span>
-                    <span class="detail-value">${booking.roomType}</span>
+                    <span class="detail-label">Room ID:</span>
+                    <span class="detail-value">${booking.roomId || '-'}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Guest Name:</span>
-                    <span class="detail-value">${booking.customerName}</span>
+                    <span class="detail-label">Guest Email:</span>
+                    <span class="detail-value">${booking.customerEmail}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Check-in:</span>
@@ -392,15 +384,14 @@ function initiateCancellation(confirmationNumber, paymentMethod, totalPrice) {
         totalPrice: totalPrice
     };
     
-    // Calculate refund policy
-    const daysUntilCheckIn = 7; // Placeholder - should come from backend
+    const daysUntilCheckIn = 7;
     const refundPercentage = daysUntilCheckIn >= 7 ? 100 : (daysUntilCheckIn >= 2 ? 50 : 0);
     const refundAmount = (totalPrice * refundPercentage) / 100;
     
     const cancellationMessage = document.getElementById('cancellationMessage');
     cancellationMessage.innerHTML = `
         <p><strong>Are you sure you want to cancel this booking?</strong></p>
-        <p>Cancellation Number: ${confirmationNumber}</p>
+        <p>Confirmation Number: ${confirmationNumber}</p>
     `;
     
     const refundInfo = document.getElementById('refundInfo');
@@ -416,10 +407,6 @@ function initiateCancellation(confirmationNumber, paymentMethod, totalPrice) {
         <div class="detail-row">
             <span>Refund Amount:</span>
             <span><strong style="color: green;">$${refundAmount.toFixed(2)}</strong></span>
-        </div>
-        <div class="detail-row">
-            <span>Processing Time:</span>
-            <span>3-5 business days</span>
         </div>
     `;
     
@@ -438,7 +425,7 @@ function confirmCancellation() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            showMessage('✓ Booking cancelled successfully. Refund will be processed within 3-5 business days.', 'success');
+            showMessage('✓ Booking cancelled successfully.', 'success');
             closeCancellationModal();
             loadMyBookings();
         } else {
@@ -454,6 +441,110 @@ function confirmCancellation() {
 function closeCancellationModal() {
     document.getElementById('cancellationModal').classList.remove('show');
     pendingCancellation = null;
+}
+
+// ========== FEATURE 8: CUSTOMER ADD-ONS & REVIEWS ==========
+
+function submitCustomerServiceRequest(event) {
+    event.preventDefault();
+    const confirmationNumber = document.getElementById('serviceConfNumber').value.trim();
+    const serviceType = document.getElementById('serviceTypeSelect').value;
+    const details = document.getElementById('serviceDetails').value.trim();
+
+    const costs = {
+        'Airport Transfer': 40,
+        'Extra Bed': 30,
+        'Late Check-Out': 25,
+        'Breakfast Package': 15,
+        'Special Request': 0
+    };
+    const cost = costs[serviceType] || 0;
+
+    fetch(`${API_BASE_URL}/customer/bookings/${encodeURIComponent(confirmationNumber)}/services`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceType, details, cost })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showMessage('✓ Service add-on requested successfully!', 'success');
+            event.target.reset();
+        } else {
+            showMessage(data.message || 'Failed to request service add-on', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error submitting service request', 'error');
+    });
+}
+
+function submitCustomerReview(event) {
+    event.preventDefault();
+    const confirmationNumber = document.getElementById('reviewConfNumber').value.trim();
+    const rating = document.getElementById('reviewRatingSelect').value;
+    const comment = document.getElementById('reviewComment').value.trim();
+
+    fetch(`${API_BASE_URL}/customer/bookings/${encodeURIComponent(confirmationNumber)}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, comment })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showMessage('✓ Thank you! Your review has been submitted.', 'success');
+            event.target.reset();
+            loadCustomerReviews();
+        } else {
+            showMessage(data.message || 'Failed to submit review', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error submitting review', 'error');
+    });
+}
+
+function loadCustomerReviews() {
+    fetch(`${API_BASE_URL}/customer/reviews`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const header = document.getElementById('customer-reviews-header');
+                if (header && data.metrics) {
+                    header.textContent = `Overall Rating: ⭐ ${data.metrics.averageRating} / 5 (${data.metrics.totalReviews} guest reviews)`;
+                }
+
+                const reviewsList = document.getElementById('customer-reviews-list');
+                if (!reviewsList) return;
+                reviewsList.innerHTML = '';
+
+                if (data.reviews.length === 0) {
+                    reviewsList.innerHTML = '<p style="color: #666;">No reviews submitted yet.</p>';
+                    return;
+                }
+
+                data.reviews.forEach(rev => {
+                    const stars = '⭐'.repeat(rev.rating);
+                    const revDiv = document.createElement('div');
+                    revDiv.style.background = '#f8f9fa';
+                    revDiv.style.padding = '15px';
+                    revDiv.style.borderRadius = '5px';
+                    revDiv.style.marginBottom = '10px';
+                    revDiv.style.borderLeft = '4px solid #667eea';
+
+                    revDiv.innerHTML = `
+                        <div style="font-weight: bold; color: #333;">${stars} (${rev.rating}/5) - Confirmation #${rev.confirmationNumber}</div>
+                        <div style="color: #555; margin-top: 5px;">"${rev.comment || 'No written comment'}"</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 5px;">${new Date(rev.createdAt).toLocaleDateString()}</div>
+                    `;
+                    reviewsList.appendChild(revDiv);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading reviews:', error));
 }
 
 // ========== LOGOUT ==========

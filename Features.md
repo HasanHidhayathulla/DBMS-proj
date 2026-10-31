@@ -58,3 +58,11 @@ While not a "business process" in the DFD, these are critical technical ToDos fo
 - **ToDo: Authentication System:** Implement secure login using usernames and passwords with strict password policies.
 - **ToDo: Automated Backup Routine:** Script the database to perform daily incremental backups and weekly full "snapshots".
 - **ToDo: Database Recovery Testing:** Establish a monthly routine to verify that backup data can be successfully restored.
+
+### Feature 8: Guest Services, Housekeeping & Feedback Management Module
+
+This feature bridges traditional hotel guest operations and post-stay customer experience handling.
+
+- **ToDo: Guest Special Requests & Add-ons:** Build workflow logic for customers and staff to request and manage special add-ons (e.g. Airport Transfer, Extra Bed, Late Check-out Request, Breakfast Package).
+- **ToDo: Housekeeping & Room Maintenance Management:** Implement task assignment, room cleaning status updates, priority tracking, and maintenance issue handling.
+- **ToDo: Guest Feedback & Rating System:** Provide post-stay 1-5 star ratings, customer review submission, and aggregated rating metrics for staff and management.
