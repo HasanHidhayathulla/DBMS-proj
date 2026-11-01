@@ -25,6 +25,7 @@
             <button class="nav-btn" onclick="switchTab('housekeeping')">Housekeeping</button>
             <button class="nav-btn" onclick="switchTab('billing')">Billing</button>
             <button class="nav-btn" onclick="switchTab('guest-services')">Guest Services & Housekeeping</button>
+            <button class="nav-btn" onclick="switchTab('loyalty-admin')">Loyalty & Promotions</button>
             <button class="nav-btn" onclick="switchTab('reporting')">Reports</button>
             <button class="nav-btn" onclick="switchTab('security')">Security</button>
             <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
@@ -425,6 +426,65 @@
                             </tr>
                         </thead>
                         <tbody id="guest-reviews-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- LOYALTY & PROMOTIONS TAB (FEATURE 9) -->
+            <div id="loyalty-admin" class="tab-content">
+                <h2>Guest Loyalty & Promotional Campaigns</h2>
+
+                <div class="form-section">
+                    <h3>Create New Promotional Code</h3>
+                    <form onsubmit="createPromoCode(event)">
+                        <input type="text" id="promoCodeInput" placeholder="Code (e.g. SUMMER25)" style="text-transform: uppercase;" required>
+                        <select id="promoTypeInput" required>
+                            <option value="PERCENT">Percentage Discount (%)</option>
+                            <option value="FLAT">Flat Amount Off ($)</option>
+                        </select>
+                        <input type="number" id="promoValueInput" placeholder="Discount Value (e.g. 20 for 20% or $20)" step="0.01" required>
+                        <input type="number" id="promoMinSpendInput" placeholder="Min. Spend ($)" step="0.01">
+                        <input type="date" id="promoValidUntilInput">
+                        <input type="text" id="promoDescInput" placeholder="Campaign Description">
+                        <button type="submit" class="btn btn-success">Create Promo</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Active Promotional Codes</h3>
+                    <button onclick="loadPromoCodes()" class="btn btn-primary">Refresh Promos</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Type</th>
+                                <th>Discount</th>
+                                <th>Min. Spend</th>
+                                <th>Valid Until</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promo-codes-list"></tbody>
+                    </table>
+                </div>
+
+                <div class="list-section">
+                    <h3>Registered Loyalty Members & Tiers</h3>
+                    <button onclick="loadLoyaltyMembers()" class="btn btn-primary">Refresh Members</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Customer Name</th>
+                                <th>Email</th>
+                                <th>Tier</th>
+                                <th>Points Balance</th>
+                                <th>Total Spent</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loyalty-members-list"></tbody>
                     </table>
                 </div>
             </div>

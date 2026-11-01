@@ -35,13 +35,33 @@ function init() {
     `CREATE TABLE IF NOT EXISTS housekeeping_tasks (id INTEGER PRIMARY KEY, roomId INTEGER, taskType TEXT, priority TEXT, status TEXT, assignedTo TEXT, notes TEXT, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS guest_reviews (id INTEGER PRIMARY KEY, confirmationNumber TEXT, rating INTEGER, comment TEXT, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS housekeepingTasks (id INTEGER PRIMARY KEY, roomId INTEGER, assignedTo TEXT, taskType TEXT, priority TEXT, status TEXT, notes TEXT, createdAt TEXT, completedAt TEXT);`,
-    `CREATE TABLE IF NOT EXISTS maintenanceRequests (id INTEGER PRIMARY KEY, roomId INTEGER, reportedBy TEXT, issueCategory TEXT, description TEXT, priority TEXT, status TEXT, resolutionNotes TEXT, createdAt TEXT, resolvedAt TEXT);`
+    `CREATE TABLE IF NOT EXISTS maintenanceRequests (id INTEGER PRIMARY KEY, roomId INTEGER, reportedBy TEXT, issueCategory TEXT, description TEXT, priority TEXT, status TEXT, resolutionNotes TEXT, createdAt TEXT, resolvedAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS loyalty_members (id INTEGER PRIMARY KEY, customerEmail TEXT UNIQUE, customerName TEXT, tier TEXT DEFAULT 'Bronze', points INTEGER DEFAULT 0, totalSpent REAL DEFAULT 0, createdAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS loyalty_transactions (id INTEGER PRIMARY KEY, memberEmail TEXT, type TEXT, points INTEGER, description TEXT, createdAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS promo_codes (id INTEGER PRIMARY KEY, code TEXT UNIQUE, discountType TEXT, discountValue REAL, minSpend REAL DEFAULT 0, validUntil TEXT, isActive INTEGER DEFAULT 1, description TEXT, createdAt TEXT);`
   ];
 
   db.serialize(() => {
     queries.forEach(q => db.run(q, (err) => {
       if (err) console.error('Error creating table:', err.message);
     }));
+
+    // Insert default promo codes if they don't exist
+    const defaultPromos = [
+      { code: 'WELCOME10', discountType: 'PERCENT', discountValue: 10, minSpend: 50, validUntil: '2030-12-31', isActive: 1, description: '10% off for new guests' },
+      { code: 'STAYVIP20', discountType: 'PERCENT', discountValue: 20, minSpend: 200, validUntil: '2030-12-31', isActive: 1, description: '20% VIP stay discount on orders over $200' },
+      { code: 'FLAT30', discountType: 'FLAT', discountValue: 30, minSpend: 150, validUntil: '2030-12-31', isActive: 1, description: '$30 off stays over $150' }
+    ];
+
+    defaultPromos.forEach(promo => {
+      db.run(
+        'INSERT OR IGNORE INTO promo_codes (code, discountType, discountValue, minSpend, validUntil, isActive, description, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [promo.code, promo.discountType, promo.discountValue, promo.minSpend, promo.validUntil, promo.isActive, promo.description, new Date().toISOString()],
+        (err) => {
+          if (err) console.error('Error inserting default promo code:', err.message);
+        }
+      );
+    });
 
     // Insert default users if they don't exist
     const defaultUsers = [
