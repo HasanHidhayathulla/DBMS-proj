@@ -129,6 +129,9 @@ function switchTab(tabName) {
         selectedTab.classList.add('active');
         if (tabName === 'housekeeping') {
             loadHousekeeping();
+        } else if (tabName === 'loyalty-admin') {
+            loadPromoCodes();
+            loadLoyaltyMembers();
         }
     }
 
@@ -731,6 +734,85 @@ function loadGuestReviews() {
     });
 }
 
+// ========== FEATURE 9: LOYALTY & PROMOTIONS (STAFF / ADMIN) ==========
+
+function createPromoCode(event) {
+    event.preventDefault();
+    const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+    const discountType = document.getElementById('promoTypeInput').value;
+    const discountValue = parseFloat(document.getElementById('promoValueInput').value);
+    const minSpend = parseFloat(document.getElementById('promoMinSpendInput').value) || 0;
+    const validUntil = document.getElementById('promoValidUntilInput').value;
+    const description = document.getElementById('promoDescInput').value;
+
+    apiCall('/promo', 'POST', { code, discountType, discountValue, minSpend, validUntil, description }).then(data => {
+        if (data.success) {
+            showNotification(`Promo code ${code} created successfully!`, 'success');
+            event.target.reset();
+            loadPromoCodes();
+        } else {
+            showNotification(data.message || 'Failed to create promo code', 'error');
+        }
+    });
+}
+
+function loadPromoCodes() {
+    apiCall('/promo').then(data => {
+        if (data.success && data.promos) {
+            const tbody = document.getElementById('promo-codes-list');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (data.promos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No promo codes available</td></tr>';
+                return;
+            }
+            data.promos.forEach(p => {
+                const discountText = p.discountType === 'PERCENT' ? `${p.discountValue}%` : `$${parseFloat(p.discountValue).toFixed(2)}`;
+                const row = `
+                    <tr>
+                        <td><strong>${p.code}</strong></td>
+                        <td>${p.discountType}</td>
+                        <td style="color: #28a745; font-weight: bold;">${discountText}</td>
+                        <td>$${parseFloat(p.minSpend || 0).toFixed(2)}</td>
+                        <td>${p.validUntil || 'No Expiry'}</td>
+                        <td>${p.description || '-'}</td>
+                        <td><span class="status-badge ${p.isActive ? 'status-available' : 'status-occupied'}">${p.isActive ? 'Active' : 'Inactive'}</span></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+    });
+}
+
+function loadLoyaltyMembers() {
+    apiCall('/loyalty/members').then(data => {
+        if (data.success && data.members) {
+            const tbody = document.getElementById('loyalty-members-list');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (data.members.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No loyalty members found</td></tr>';
+                return;
+            }
+            data.members.forEach(m => {
+                const row = `
+                    <tr>
+                        <td>#${m.id}</td>
+                        <td>${m.customerName || 'Guest'}</td>
+                        <td>${m.customerEmail}</td>
+                        <td><span class="status-badge priority-high" style="font-weight: bold;">${m.tier}</span></td>
+                        <td style="font-weight: bold; color: #28a745;">${m.points} pts</td>
+                        <td>$${parseFloat(m.totalSpent || 0).toFixed(2)}</td>
+                        <td>${new Date(m.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+    });
+}
+
 // ========== FEATURE 6: REPORTING ==========
 
 function loadRevenueReport(event) {
@@ -839,5 +921,6 @@ window.addEventListener('load', () => {
         loadHousekeepingTasks();
         loadServiceRequests();
         loadGuestReviews();
+        loadPromoCodes();
     }
 });

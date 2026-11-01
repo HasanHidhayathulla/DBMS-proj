@@ -7,6 +7,9 @@ const TAX_RATE = 0.08; // 8% tax
 let selectedRoom = null;
 let selectedPaymentMethod = null;
 let pendingCancellation = null;
+let appliedPromo = null;
+let appliedPointsRedeemed = 0;
+let baseBookingTotal = 0;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,8 +19,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchCheckIn) searchCheckIn.min = today;
     if (searchCheckOut) searchCheckOut.min = today;
     
+    const savedEmail = localStorage.getItem('customerEmail');
+    if (savedEmail) {
+        const emailInput = document.getElementById('loyaltyCheckEmail');
+        if (emailInput) emailInput.value = savedEmail;
+    }
+
     loadMyBookings();
     loadCustomerReviews();
+    loadCustomerPromos();
 });
 
 // ========== TAB SWITCHING ==========
@@ -149,11 +159,27 @@ function getRoomEmoji(roomType) {
 // ========== BOOKING MODAL ==========
 function openBookingModal(roomId, roomType, baseRate, checkIn, checkOut, nights) {
     selectedRoom = { id: roomId, type: roomType, baseRate: baseRate };
+    appliedPromo = null;
+    appliedPointsRedeemed = 0;
     
     document.getElementById('bookingRoomType').value = roomType;
     document.getElementById('bookingCheckIn').value = checkIn;
     document.getElementById('bookingCheckOut').value = checkOut;
     
+    const savedEmail = localStorage.getItem('customerEmail');
+    if (savedEmail) {
+        const bookingEmailInput = document.getElementById('bookingEmail');
+        if (bookingEmailInput) bookingEmailInput.value = savedEmail;
+    }
+
+    // Reset discount rows & messages
+    document.getElementById('promoDiscountRow').style.display = 'none';
+    document.getElementById('pointsDiscountRow').style.display = 'none';
+    document.getElementById('promoApplicationMsg').textContent = '';
+    document.getElementById('pointsApplicationMsg').textContent = '';
+    document.getElementById('bookingPromoCode').value = '';
+    document.getElementById('bookingPointsRedeem').value = '';
+
     updateBookingPrice(baseRate, nights);
     
     selectedPaymentMethod = null;
@@ -166,19 +192,213 @@ function openBookingModal(roomId, roomType, baseRate, checkIn, checkOut, nights)
 function closeBookingModal() {
     document.getElementById('bookingModal').classList.remove('show');
     selectedRoom = null;
+    appliedPromo = null;
+    appliedPointsRedeemed = 0;
     document.getElementById('bookingModal').querySelector('form').reset();
 }
 
 function updateBookingPrice(baseRate, nights) {
     const subtotal = baseRate * nights;
     const tax = subtotal * TAX_RATE;
-    const total = subtotal + tax;
+    baseBookingTotal = subtotal + tax;
     
     document.getElementById('pricePerNight').textContent = `$${baseRate.toFixed(2)}`;
     document.getElementById('numberOfNights').textContent = nights;
     document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
     document.getElementById('taxAmount').textContent = `$${tax.toFixed(2)}`;
-    document.getElementById('totalPrice').textContent = `$${total.toFixed(2)}`;
+
+    recalculateFinalTotal();
+}
+
+function recalculateFinalTotal() {
+    let currentTotal = baseBookingTotal;
+    let promoDiscount = 0;
+
+    if (appliedPromo) {
+        if (appliedPromo.discountType === 'PERCENT') {
+            promoDiscount = (currentTotal * appliedPromo.discountValue) / 100;
+        } else if (appliedPromo.discountType === 'FLAT') {
+            promoDiscount = appliedPromo.discountValue;
+        }
+        promoDiscount = Math.min(promoDiscount, currentTotal);
+        currentTotal = Math.max(0, currentTotal - promoDiscount);
+        document.getElementById('promoDiscountRow').style.display = 'flex';
+        document.getElementById('promoDiscountAmount').textContent = `-$${promoDiscount.toFixed(2)}`;
+    } else {
+        document.getElementById('promoDiscountRow').style.display = 'none';
+    }
+
+    let pointsDiscount = 0;
+    if (appliedPointsRedeemed > 0) {
+        pointsDiscount = Math.min(appliedPointsRedeemed / 100, currentTotal);
+        currentTotal = Math.max(0, currentTotal - pointsDiscount);
+        document.getElementById('pointsDiscountRow').style.display = 'flex';
+        document.getElementById('pointsDiscountAmount').textContent = `-$${pointsDiscount.toFixed(2)}`;
+    } else {
+        document.getElementById('pointsDiscountRow').style.display = 'none';
+    }
+
+    document.getElementById('totalPrice').textContent = `$${currentTotal.toFixed(2)}`;
+}
+
+// ========== FEATURE 9: PROMO & LOYALTY CLIENT INTEGRATION ==========
+
+function applyPromoCode() {
+    const code = document.getElementById('bookingPromoCode').value.trim().toUpperCase();
+    const msg = document.getElementById('promoApplicationMsg');
+
+    if (!code) {
+        msg.textContent = 'Please enter a promo code';
+        msg.style.color = '#dc3545';
+        return;
+    }
+
+    fetch(`${API_BASE_URL}/promo/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, amount: baseBookingTotal })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            appliedPromo = {
+                code: data.promoCode,
+                discountType: data.discountType,
+                discountValue: data.discountValue,
+                discountAmount: data.discountAmount
+            };
+            msg.textContent = `✓ ${data.message} (Saved $${data.discountAmount.toFixed(2)})`;
+            msg.style.color = '#28a745';
+            recalculateFinalTotal();
+        } else {
+            appliedPromo = null;
+            msg.textContent = `❌ ${data.message || 'Invalid promo code'}`;
+            msg.style.color = '#dc3545';
+            recalculateFinalTotal();
+        }
+    })
+    .catch(err => {
+        console.error('Error applying promo:', err);
+        msg.textContent = 'Error verifying promo code';
+        msg.style.color = '#dc3545';
+    });
+}
+
+function applyPointsRedeem() {
+    const email = document.getElementById('bookingEmail').value.trim();
+    const pts = parseInt(document.getElementById('bookingPointsRedeem').value, 10);
+    const msg = document.getElementById('pointsApplicationMsg');
+
+    if (!email) {
+        msg.textContent = 'Please fill in your Email Address above first.';
+        msg.style.color = '#dc3545';
+        return;
+    }
+
+    if (!pts || pts <= 0) {
+        msg.textContent = 'Please enter a valid points amount.';
+        msg.style.color = '#dc3545';
+        return;
+    }
+
+    fetch(`${API_BASE_URL}/loyalty/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, pointsToRedeem: pts, billTotal: baseBookingTotal })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.calculation.success) {
+            appliedPointsRedeemed = data.calculation.pointsRedeemed;
+            msg.textContent = `✓ Redeemed ${data.calculation.pointsRedeemed} points for $${data.calculation.discountAmount.toFixed(2)} off!`;
+            msg.style.color = '#28a745';
+            recalculateFinalTotal();
+        } else {
+            appliedPointsRedeemed = 0;
+            msg.textContent = `❌ ${data.calculation?.message || data.message || 'Failed to redeem points'}`;
+            msg.style.color = '#dc3545';
+            recalculateFinalTotal();
+        }
+    })
+    .catch(err => {
+        console.error('Error redeeming points:', err);
+        msg.textContent = 'Error calculating redemption';
+        msg.style.color = '#dc3545';
+    });
+}
+
+function lookupCustomerLoyalty() {
+    const email = document.getElementById('loyaltyCheckEmail').value.trim();
+    if (!email) {
+        showMessage('Please enter an email address', 'error');
+        return;
+    }
+
+    fetch(`${API_BASE_URL}/loyalty/profile?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const card = document.getElementById('loyalty-profile-card');
+                card.style.display = 'block';
+
+                document.getElementById('loyalty-member-title').textContent = `Member Account: ${data.member.customerEmail}`;
+                document.getElementById('loyalty-tier-badge').textContent = data.member.tier;
+                document.getElementById('loyalty-points-count').textContent = `${data.member.points} pts`;
+                document.getElementById('loyalty-total-spent').textContent = `$${parseFloat(data.member.totalSpent || 0).toFixed(2)}`;
+                document.getElementById('loyalty-tier-benefit').textContent = `${data.member.pointsMultiplier || 10} pts / $1 (${data.member.tierDiscountPercent || 0}% tier discount)`;
+
+                const hist = document.getElementById('loyalty-history-list');
+                if (data.history && data.history.length > 0) {
+                    let hHtml = '<h5 style="margin: 10px 0 5px 0;">Recent Points Activity:</h5><ul style="padding-left: 20px; font-size: 13px; color: #555;">';
+                    data.history.forEach(tx => {
+                        const sign = tx.type === 'EARNED' ? '+' : '-';
+                        const color = tx.type === 'EARNED' ? '#28a745' : '#dc3545';
+                        hHtml += `<li><strong style="color: ${color};">${sign}${tx.points} pts</strong>: ${tx.description} <small>(${new Date(tx.createdAt).toLocaleDateString()})</small></li>`;
+                    });
+                    hHtml += '</ul>';
+                    hist.innerHTML = hHtml;
+                } else {
+                    hist.innerHTML = '<p style="font-size: 13px; color: #777;">No previous transaction history.</p>';
+                }
+            }
+        })
+        .catch(err => {
+            console.error('Error loading loyalty profile:', err);
+            showMessage('Failed to retrieve loyalty profile', 'error');
+        });
+}
+
+function loadCustomerPromos() {
+    fetch(`${API_BASE_URL}/promo`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.promos) {
+                const container = document.getElementById('available-promos-container');
+                if (!container) return;
+                container.innerHTML = '';
+
+                data.promos.filter(p => p.isActive).forEach(promo => {
+                    const discountText = promo.discountType === 'PERCENT' ? `${promo.discountValue}% OFF` : `$${promo.discountValue} OFF`;
+                    const card = document.createElement('div');
+                    card.style.background = 'white';
+                    card.style.border = '1px solid #c7d2fe';
+                    card.style.borderRadius = '6px';
+                    card.style.padding = '15px';
+                    card.style.borderLeft = '4px solid #667eea';
+
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: bold; background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 4px; font-family: monospace;">${promo.code}</span>
+                            <span style="font-weight: bold; color: #28a745;">${discountText}</span>
+                        </div>
+                        <div style="font-size: 13px; color: #555; margin-bottom: 6px;">${promo.description || 'Special hotel promotional offer'}</div>
+                        <div style="font-size: 12px; color: #888;">Min. spend: $${promo.minSpend} | Valid through ${promo.validUntil}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        })
+        .catch(err => console.error('Error loading promos:', err));
 }
 
 function selectPaymentMethod(method) {
@@ -241,8 +461,10 @@ function createBooking(name, email, phone) {
         customerPhone: phone,
         checkInDate: checkIn,
         checkOutDate: checkOut,
-        totalPrice: totalPrice,
+        totalPrice: baseBookingTotal,
         paymentMethod: selectedPaymentMethod,
+        promoCode: appliedPromo ? appliedPromo.code : null,
+        pointsRedeemed: appliedPointsRedeemed || 0,
         cardNumber: selectedPaymentMethod === 'online' ? document.getElementById('cardNumber').value : null,
         cardExpiry: selectedPaymentMethod === 'online' ? document.getElementById('cardExpiry').value : null,
         cardCVV: selectedPaymentMethod === 'online' ? document.getElementById('cardCVV').value : null

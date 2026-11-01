@@ -68,3 +68,12 @@ This feature bridges traditional hotel guest operations, post-checkout room turn
 - **ToDo: Room Turnover & Inspection Flow:** Allow housekeeping supervisors and staff to inspect cleaned rooms and release them back to "Available" status.
 - **ToDo: Maintenance & Out-of-Order Tracking:** Log room issues across categories and restore availability once resolved.
 - **ToDo: Guest Feedback & Rating System:** Provide post-stay 1-5 star ratings and aggregated feedback metrics.
+
+### Feature 9: Guest Loyalty, Promotional Campaigns & Membership Discounts
+
+This feature manages customer retention, promotional pricing strategies, and loyalty rewards common in modern hotel operations.
+
+- **ToDo: Loyalty Membership & Tier Progression:** Auto-register guests into Bronze, Silver, Gold, and Platinum loyalty tiers based on lifetime spend and booking history.
+- **ToDo: Points Accrual & Redemption Engine:** Award reward points per dollar spent based on active tier multipliers, and allow guests to redeem points for cash deductions at checkout.
+- **ToDo: Promotional Discount Engine:** Validate discount codes (Percentage and Flat Off), enforce minimum spend requirements, expiry dates, and campaign statuses.
+- **ToDo: Integrated Booking Checkout & Admin Management:** Enable online customers to apply coupons and points seamlessly during booking, while allowing hotel managers to run and monitor promo campaigns.

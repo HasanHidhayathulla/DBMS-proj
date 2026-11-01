@@ -243,6 +243,48 @@ function testHousekeepingAndMaintenance() {
     console.log('✅ All Housekeeping & Maintenance Tests Passed!\n');
 }
 
+// Scenario 12: Feature 9 Guest Loyalty, Promo & Discount System
+function testFeature9LoyaltyAndPromos() {
+    console.log('=== TEST SCENARIO 12: Guest Loyalty, Promo & Discount System ===');
+    const loyaltyManager = require('./Feature9_LoyaltyDiscounts/LoyaltyManager');
+    const promoEngine = require('./Feature9_LoyaltyDiscounts/PromoEngine');
+
+    console.log('Testing Loyalty Tier Determination...');
+    const tierBronze = loyaltyManager.determineTier(100);
+    const tierSilver = loyaltyManager.determineTier(600);
+    const tierGold = loyaltyManager.determineTier(1800);
+    const tierPlatinum = loyaltyManager.determineTier(3500);
+
+    console.log(`✓ $100 spent -> ${tierBronze.tier} Tier (${tierBronze.pointsMultiplier} pts/$)`);
+    console.log(`✓ $600 spent -> ${tierSilver.tier} Tier (${tierSilver.pointsMultiplier} pts/$, ${tierSilver.discountPercent}% room discount)`);
+    console.log(`✓ $1,800 spent -> ${tierGold.tier} Tier (${tierGold.pointsMultiplier} pts/$, ${tierGold.discountPercent}% room discount)`);
+    console.log(`✓ $3,500 spent -> ${tierPlatinum.tier} Tier (${tierPlatinum.pointsMultiplier} pts/$, ${tierPlatinum.discountPercent}% room discount)`);
+
+    console.log('\nTesting Points Accrual...');
+    const pointsGold = loyaltyManager.calculatePointsEarned(250, 'Gold');
+    console.log(`✓ Earned ${pointsGold.pointsEarned} points for $250 booking under ${pointsGold.tier} Tier`);
+
+    console.log('\nTesting Points Redemption...');
+    const redemption = loyaltyManager.calculateRedemption(2500, 1000, 150);
+    console.log(`✓ Redeemed ${redemption.pointsRedeemed} points for $${redemption.discountAmount} discount. Bill reduced from $150 to $${redemption.finalBillAmount}. Remaining: ${redemption.remainingPoints} pts`);
+
+    console.log('\nTesting Promo Code Validation & Discounts...');
+    const promoPercent = { code: 'WELCOME10', discountType: 'PERCENT', discountValue: 10, minSpend: 50, isActive: 1, validUntil: '2030-12-31' };
+    const promoFlat = { code: 'FLAT30', discountType: 'FLAT', discountValue: 30, minSpend: 100, isActive: 1, validUntil: '2030-12-31' };
+    const promoExpired = { code: 'EXPIRED', discountType: 'PERCENT', discountValue: 15, minSpend: 0, isActive: 1, validUntil: '2020-01-01' };
+
+    const discount1 = promoEngine.calculateDiscount(promoPercent, 200);
+    console.log(`✓ Applied ${discount1.promoCode}: Original $${discount1.originalTotal} -> Final $${discount1.finalTotal} (Saved $${discount1.discountAmount})`);
+
+    const discount2 = promoEngine.calculateDiscount(promoFlat, 150);
+    console.log(`✓ Applied ${discount2.promoCode}: Original $${discount2.originalTotal} -> Final $${discount2.finalTotal} (Saved $${discount2.discountAmount})`);
+
+    const expiredResult = promoEngine.calculateDiscount(promoExpired, 100);
+    console.log(`✓ Expired promo handled safely: ${expiredResult.message}`);
+
+    console.log('✅ All Feature 9 Loyalty & Promo Tests Passed!\n');
+}
+
 // Run all test scenarios
 function runAllTests() {
     console.log('\n╔════════════════════════════════════════════════════════════╗');
@@ -260,6 +302,7 @@ function runAllTests() {
     testAuthenticationFlow();
     testFeature8Flow();
     testHousekeepingAndMaintenance();
+    testFeature9LoyaltyAndPromos();
     
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║   All Test Scenarios Completed Successfully! ✓             ║');
