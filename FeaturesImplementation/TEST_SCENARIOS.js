@@ -243,6 +243,95 @@ function testHousekeepingAndMaintenance() {
     console.log('✅ All Housekeeping & Maintenance Tests Passed!\n');
 }
 
+// Test Scenario 12: Promotions & Guest Loyalty Rewards (Feature 9)
+function testPromotionsAndLoyalty() {
+    console.log('=== TEST SCENARIO 12: Promotions & Guest Loyalty Rewards ===');
+    const promotionEngine = require('./Feature9_PromotionsAndLoyalty/PromotionEngine');
+    const loyaltyRewards = require('./Feature9_PromotionsAndLoyalty/LoyaltyRewards');
+
+    // Test 1: Percentage Promo Validation
+    console.log('Testing percentage promo code validation...');
+    const promo10 = {
+        code: 'WELCOME10',
+        discountType: 'percentage',
+        discountValue: 10,
+        minSpend: 50,
+        isActive: 1
+    };
+    const res1 = promotionEngine.applyPromotion(promo10, 300);
+    if (!res1.valid || res1.discountAmount !== 30 || res1.finalSubtotal !== 270) {
+        throw new Error('Percentage promo calculation failed');
+    }
+    console.log(`✓ WELCOME10 applied to $300: -$${res1.discountAmount} (Subtotal: $${res1.finalSubtotal})`);
+
+    // Test 2: Fixed Promo & Min Spend Enforcement
+    console.log('Testing fixed promo with minimum spend requirement...');
+    const promo50 = {
+        code: 'SUMMER50',
+        discountType: 'fixed',
+        discountValue: 50,
+        minSpend: 200,
+        isActive: 1
+    };
+    const failMinSpend = promotionEngine.applyPromotion(promo50, 150);
+    if (failMinSpend.valid) {
+        throw new Error('Promo should have failed minimum spend');
+    }
+    console.log(`✓ Minimum spend correctly enforced: "${failMinSpend.message}"`);
+
+    const passMinSpend = promotionEngine.applyPromotion(promo50, 400);
+    if (!passMinSpend.valid || passMinSpend.discountAmount !== 50 || passMinSpend.finalSubtotal !== 350) {
+        throw new Error('Fixed promo calculation failed');
+    }
+    console.log(`✓ SUMMER50 applied to $400: -$${passMinSpend.discountAmount} (Subtotal: $${passMinSpend.finalSubtotal})`);
+
+    // Test 3: Inactive / Expired Promo
+    console.log('Testing inactive promotion handling...');
+    const promoInactive = {
+        code: 'EXPIRED20',
+        discountType: 'percentage',
+        discountValue: 20,
+        isActive: 0
+    };
+    const failInactive = promotionEngine.applyPromotion(promoInactive, 200);
+    if (failInactive.valid) throw new Error('Inactive promo should not be valid');
+    console.log(`✓ Inactive code blocked: "${failInactive.message}"`);
+
+    // Test 4: Loyalty Tier Progression
+    console.log('Testing loyalty tier calculation based on spending...');
+    const silverTier = loyaltyRewards.calculateTier(350);
+    const goldTier = loyaltyRewards.calculateTier(1200);
+    const platTier = loyaltyRewards.calculateTier(3000);
+    if (silverTier !== 'Silver' || goldTier !== 'Gold' || platTier !== 'Platinum') {
+        throw new Error('Tier calculation logic error');
+    }
+    console.log(`✓ Tiers verified: $350 -> ${silverTier}, $1200 -> ${goldTier}, $3000 -> ${platTier}`);
+
+    // Test 5: Points Accrual with Tier Multipliers
+    console.log('Testing points accrual with tier bonuses...');
+    const silverPts = loyaltyRewards.calculatePointsEarned(100, 'Silver'); // 100 * 10 * 1.0 = 1000
+    const goldPts = loyaltyRewards.calculatePointsEarned(100, 'Gold');     // 100 * 10 * 1.25 = 1250
+    const platPts = loyaltyRewards.calculatePointsEarned(100, 'Platinum'); // 100 * 10 * 1.5 = 1500
+    if (silverPts !== 1000 || goldPts !== 1250 || platPts !== 1500) {
+        throw new Error(`Points calculation error: Silver=${silverPts}, Gold=${goldPts}, Platinum=${platPts}`);
+    }
+    console.log(`✓ Points earned for $100 spend: Silver=${silverPts} pts, Gold=${goldPts} pts, Platinum=${platPts} pts`);
+
+    // Test 6: Points Redemption
+    console.log('Testing points redemption validation...');
+    const redemption = loyaltyRewards.validateRedemption(2500, 1000, 150);
+    if (!redemption.valid || redemption.discountAmount !== 10 || redemption.remainingPoints !== 1500 || redemption.newTotal !== 140) {
+        throw new Error('Points redemption calculation failed');
+    }
+    console.log(`✓ Redeemed 1000 points for $${redemption.discountAmount} discount (New total: $${redemption.newTotal})`);
+
+    const failOverRedeem = loyaltyRewards.validateRedemption(500, 1000, 150);
+    if (failOverRedeem.valid) throw new Error('Excess point redemption should fail');
+    console.log(`✓ Excess points redemption correctly blocked: "${failOverRedeem.message}"`);
+
+    console.log('✅ All Feature 9 Promotions & Loyalty Tests Passed!\n');
+}
+
 // Run all test scenarios
 function runAllTests() {
     console.log('\n╔════════════════════════════════════════════════════════════╗');
@@ -260,6 +349,7 @@ function runAllTests() {
     testAuthenticationFlow();
     testFeature8Flow();
     testHousekeepingAndMaintenance();
+    testPromotionsAndLoyalty();
     
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║   All Test Scenarios Completed Successfully! ✓             ║');

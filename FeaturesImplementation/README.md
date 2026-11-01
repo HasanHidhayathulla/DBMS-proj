@@ -15,6 +15,7 @@ FeaturesImplementation/
 ├── Feature7_Security/           # Security and infrastructure
 ├── Feature8_GuestServices/      # Guest add-on services, housekeeping & reviews
 ├── Feature8_Housekeeping/       # Housekeeping & room maintenance
+├── Feature9_PromotionsAndLoyalty/# Promotional codes and guest loyalty rewards
 ├── Shared/                      # Shared database models
 ├── api/                         # Backend API server
 ├── public/                      # Frontend HTML/CSS/JS
@@ -76,6 +77,13 @@ FeaturesImplementation/
 - **Room Turnover & Inspection Flow**: Mark cleaned and inspected rooms as "Available"
 - **Maintenance & Defect Tracking**: Report room issues and restore availability after repair
 - **Guest Feedback & Rating**: Submit post-stay 1-5 star ratings and reviews, with aggregated metrics
+
+### Feature 9: Promotional Codes, Loyalty Rewards & Discount Engine (Marketing & Retention Module)
+
+- **Promotion Engine**: Validate percentage or fixed discount coupon codes with minimum spend thresholds and usage constraints.
+- **Loyalty Rewards Program**: Customer enrollment, points accrual (10 pts/$1 with Gold/Platinum multipliers), and tier progression (Silver, Gold, Platinum).
+- **Points Redemption**: Instant dollar deduction against bookings with point balances.
+- **Admin Campaign Management**: Dedicated management interface to create, monitor, and toggle promotional codes and inspect member accounts.
 
 ## Installation & Setup
 
@@ -183,6 +191,16 @@ http://localhost:3000
 - `GET /api/maintenance` - List all maintenance tickets
 - `PUT /api/maintenance/:id/resolve` - Resolve maintenance ticket and restore room to Available
 
+### Promotions & Loyalty Rewards (Feature 9)
+
+- `POST /api/promotions/validate` - Validate promotional coupon code and calculate discount
+- `GET /api/promotions` - List all promotional codes (Admin/Manager/Staff)
+- `POST /api/promotions` - Create a new promotional discount campaign (Admin/Manager)
+- `PUT /api/promotions/:id/status` - Activate or deactivate a promotional code
+- `GET /api/loyalty/profile` - Lookup guest loyalty account, points balance, and tier status
+- `POST /api/loyalty/register` - Enroll a customer in loyalty rewards program
+- `POST /api/loyalty/redeem` - Redeem loyalty points for reservation discounts
+
 ## Database Models
 
 - **Room**
@@ -193,6 +211,9 @@ http://localhost:3000
 - **GuestService**
 - **HousekeepingTask**
 - **GuestReview**
+- **PromoCode**
+- **LoyaltyMember**
+- **LoyaltyTransaction**
 
 ---
 

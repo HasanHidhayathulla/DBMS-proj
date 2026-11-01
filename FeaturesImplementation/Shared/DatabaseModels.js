@@ -92,4 +92,54 @@ const GuestReview = {
   createdAt: 'TEXT'
 };
 
-module.exports = { Room, User, Reservation, Payment, Invoice, GuestService, HousekeepingTask, MaintenanceRequest, GuestReview };
+// PromoCode table model (Feature 9)
+const PromoCode = {
+  id: 'INTEGER PRIMARY KEY',
+  code: 'TEXT UNIQUE',
+  description: 'TEXT',
+  discountType: 'TEXT', // 'percentage', 'fixed'
+  discountValue: 'REAL',
+  minSpend: 'REAL',
+  maxUses: 'INTEGER',
+  usedCount: 'INTEGER',
+  validFrom: 'TEXT',
+  validUntil: 'TEXT',
+  isActive: 'INTEGER', // 1 or 0
+  createdAt: 'TEXT'
+};
+
+// LoyaltyMember table model (Feature 9)
+const LoyaltyMember = {
+  id: 'INTEGER PRIMARY KEY',
+  customerEmail: 'TEXT UNIQUE',
+  customerName: 'TEXT',
+  pointsBalance: 'INTEGER',
+  tier: 'TEXT', // 'Silver', 'Gold', 'Platinum'
+  totalSpent: 'REAL',
+  createdAt: 'TEXT'
+};
+
+// LoyaltyTransaction table model (Feature 9)
+const LoyaltyTransaction = {
+  id: 'INTEGER PRIMARY KEY',
+  memberId: 'INTEGER',
+  type: 'TEXT', // 'Earned', 'Redeemed'
+  points: 'INTEGER',
+  description: 'TEXT',
+  createdAt: 'TEXT'
+};
+
+module.exports = {
+  Room,
+  User,
+  Reservation,
+  Payment,
+  Invoice,
+  GuestService,
+  HousekeepingTask,
+  MaintenanceRequest,
+  GuestReview,
+  PromoCode,
+  LoyaltyMember,
+  LoyaltyTransaction
+};

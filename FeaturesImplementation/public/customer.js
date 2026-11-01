@@ -7,6 +7,10 @@ const TAX_RATE = 0.08; // 8% tax
 let selectedRoom = null;
 let selectedPaymentMethod = null;
 let pendingCancellation = null;
+let appliedPromoDiscount = 0;
+let appliedPromoCode = null;
+let appliedLoyaltyDiscount = 0;
+let appliedLoyaltyPoints = 0;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -166,19 +170,178 @@ function openBookingModal(roomId, roomType, baseRate, checkIn, checkOut, nights)
 function closeBookingModal() {
     document.getElementById('bookingModal').classList.remove('show');
     selectedRoom = null;
+    appliedPromoDiscount = 0;
+    appliedPromoCode = null;
+    appliedLoyaltyDiscount = 0;
+    appliedLoyaltyPoints = 0;
+    const promoRow = document.getElementById('promoDiscountRow');
+    if (promoRow) promoRow.style.display = 'none';
+    const loyaltyRow = document.getElementById('loyaltyDiscountRow');
+    if (loyaltyRow) loyaltyRow.style.display = 'none';
+    const promoMsg = document.getElementById('promoCodeMessage');
+    if (promoMsg) promoMsg.innerHTML = '';
+    const loyaltyMsg = document.getElementById('loyaltyRedeemMessage');
+    if (loyaltyMsg) loyaltyMsg.innerHTML = '';
     document.getElementById('bookingModal').querySelector('form').reset();
 }
 
 function updateBookingPrice(baseRate, nights) {
     const subtotal = baseRate * nights;
-    const tax = subtotal * TAX_RATE;
-    const total = subtotal + tax;
+    const discountedSubtotal = Math.max(0, subtotal - appliedPromoDiscount - appliedLoyaltyDiscount);
+    const tax = discountedSubtotal * TAX_RATE;
+    const total = discountedSubtotal + tax;
     
     document.getElementById('pricePerNight').textContent = `$${baseRate.toFixed(2)}`;
     document.getElementById('numberOfNights').textContent = nights;
     document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
     document.getElementById('taxAmount').textContent = `$${tax.toFixed(2)}`;
     document.getElementById('totalPrice').textContent = `$${total.toFixed(2)}`;
+}
+
+async function applyPromoCode() {
+    const code = document.getElementById('bookingPromoCode').value.trim();
+    const msgEl = document.getElementById('promoCodeMessage');
+    const discountRow = document.getElementById('promoDiscountRow');
+    const discountLabel = document.getElementById('promoDiscountLabel');
+    const discountAmountEl = document.getElementById('promoDiscountAmount');
+
+    if (!code) {
+        msgEl.innerHTML = '<span style="color: red;">Please enter a promo code</span>';
+        return;
+    }
+
+    if (!selectedRoom) return;
+    const checkIn = new Date(document.getElementById('bookingCheckIn').value);
+    const checkOut = new Date(document.getElementById('bookingCheckOut').value);
+    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24)) || 1;
+    const subtotal = nights * selectedRoom.baseRate;
+
+    try {
+        const res = await fetch('/api/promotions/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, subtotal })
+        });
+        const data = await res.json();
+        if (data.success) {
+            appliedPromoDiscount = data.calculation.discountAmount;
+            appliedPromoCode = data.promo.code;
+            discountRow.style.display = 'flex';
+            discountLabel.textContent = data.promo.code;
+            discountAmountEl.textContent = `-$${appliedPromoDiscount.toFixed(2)}`;
+            msgEl.innerHTML = `<span style="color: green;">✓ Promo code applied! Saved $${appliedPromoDiscount.toFixed(2)}</span>`;
+            updateBookingPrice(selectedRoom.baseRate, nights);
+        } else {
+            appliedPromoDiscount = 0;
+            appliedPromoCode = null;
+            discountRow.style.display = 'none';
+            msgEl.innerHTML = `<span style="color: red;">✗ ${data.message}</span>`;
+            updateBookingPrice(selectedRoom.baseRate, nights);
+        }
+    } catch (e) {
+        msgEl.innerHTML = `<span style="color: red;">Error validating promo code</span>`;
+    }
+}
+
+async function applyLoyaltyPoints() {
+    const points = parseInt(document.getElementById('bookingLoyaltyPoints').value, 10);
+    const email = document.getElementById('bookingEmail').value.trim();
+    const msgEl = document.getElementById('loyaltyRedeemMessage');
+    const discountRow = document.getElementById('loyaltyDiscountRow');
+    const discountAmountEl = document.getElementById('loyaltyDiscountAmount');
+
+    if (!email) {
+        msgEl.innerHTML = '<span style="color: red;">Please enter your email above first</span>';
+        return;
+    }
+
+    if (!points || points <= 0) {
+        msgEl.innerHTML = '<span style="color: red;">Enter valid points to redeem</span>';
+        return;
+    }
+
+    if (!selectedRoom) return;
+    const checkIn = new Date(document.getElementById('bookingCheckIn').value);
+    const checkOut = new Date(document.getElementById('bookingCheckOut').value);
+    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24)) || 1;
+    const subtotal = Math.max(0, (nights * selectedRoom.baseRate) - appliedPromoDiscount);
+
+    try {
+        const res = await fetch('/api/loyalty/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, points, bookingTotal: subtotal })
+        });
+        const data = await res.json();
+        if (data.success) {
+            appliedLoyaltyDiscount = data.redemption.discountAmount;
+            appliedLoyaltyPoints = points;
+            discountRow.style.display = 'flex';
+            discountAmountEl.textContent = `-$${appliedLoyaltyDiscount.toFixed(2)}`;
+            msgEl.innerHTML = `<span style="color: green;">✓ Redeemed ${points} points for $${appliedLoyaltyDiscount.toFixed(2)} discount!</span>`;
+            updateBookingPrice(selectedRoom.baseRate, nights);
+        } else {
+            appliedLoyaltyDiscount = 0;
+            appliedLoyaltyPoints = 0;
+            discountRow.style.display = 'none';
+            msgEl.innerHTML = `<span style="color: red;">✗ ${data.message}</span>`;
+            updateBookingPrice(selectedRoom.baseRate, nights);
+        }
+    } catch (e) {
+        msgEl.innerHTML = `<span style="color: red;">Error checking loyalty points</span>`;
+    }
+}
+
+async function checkLoyaltyStatus(e) {
+    e.preventDefault();
+    const email = document.getElementById('loyaltySearchEmail').value.trim();
+    const resDiv = document.getElementById('loyaltyProfileResult');
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = '<p>Loading profile...</p>';
+
+    try {
+        const res = await fetch(`/api/loyalty/profile?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.success) {
+            const m = data.member;
+            resDiv.innerHTML = `
+                <div style="background: white; border: 1px solid #ddd; padding: 15px; border-radius: 6px;">
+                    <h4 style="margin: 0 0 10px 0; color: #667eea;">${m.customerName} (${m.tier} Tier)</h4>
+                    <p style="margin: 5px 0;"><strong>Points Balance:</strong> ${m.pointsBalance} pts (Value: $${data.redemptionDollarValue.toFixed(2)})</p>
+                    <p style="margin: 5px 0;"><strong>Lifetime Total Spent:</strong> $${m.totalSpent.toFixed(2)}</p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #666;">Tier Progression: Silver (0+) &bull; Gold ($1,000+) &bull; Platinum ($2,500+)</p>
+                </div>
+            `;
+        } else {
+            resDiv.innerHTML = `<p style="color: red;">${data.message}</p>`;
+        }
+    } catch (err) {
+        resDiv.innerHTML = `<p style="color: red;">Failed to fetch profile</p>`;
+    }
+}
+
+async function registerLoyaltyMember(e) {
+    e.preventDefault();
+    const customerName = document.getElementById('loyaltyRegName').value.trim();
+    const customerEmail = document.getElementById('loyaltyRegEmail').value.trim();
+    const resDiv = document.getElementById('loyaltyRegisterResult');
+    resDiv.style.display = 'block';
+
+    try {
+        const res = await fetch('/api/loyalty/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customerName, customerEmail })
+        });
+        const data = await res.json();
+        if (data.success) {
+            resDiv.innerHTML = `<div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 5px;">${data.message} Welcome bonus of ${data.member.pointsBalance} points added!</div>`;
+        } else {
+            resDiv.innerHTML = `<div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px;">${data.message}</div>`;
+        }
+    } catch (err) {
+        resDiv.innerHTML = `<div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px;">Error registering for rewards</div>`;
+    }
 }
 
 function selectPaymentMethod(method) {
@@ -243,6 +406,8 @@ function createBooking(name, email, phone) {
         checkOutDate: checkOut,
         totalPrice: totalPrice,
         paymentMethod: selectedPaymentMethod,
+        promoCode: appliedPromoCode,
+        pointsRedeemed: appliedLoyaltyPoints,
         cardNumber: selectedPaymentMethod === 'online' ? document.getElementById('cardNumber').value : null,
         cardExpiry: selectedPaymentMethod === 'online' ? document.getElementById('cardExpiry').value : null,
         cardCVV: selectedPaymentMethod === 'online' ? document.getElementById('cardCVV').value : null

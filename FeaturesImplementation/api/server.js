@@ -42,6 +42,10 @@ const guestServicesModule = require('../Feature8_GuestServices/GuestServices');
 const housekeepingModule = require('../Feature8_GuestServices/HousekeepingManagement');
 const guestReviewsModule = require('../Feature8_GuestServices/GuestReviews');
 
+// Feature 9 modules
+const promotionEngine = require('../Feature9_PromotionsAndLoyalty/PromotionEngine');
+const loyaltyRewards = require('../Feature9_PromotionsAndLoyalty/LoyaltyRewards');
+
 const app = express();
 const port = 3000;
 
@@ -756,12 +760,18 @@ app.get('/api/health', (req, res) => {
 app.post('/api/customer/bookings', (req, res) => {
   (async () => {
     try {
-      const { roomId, customerName, customerEmail, customerPhone, checkInDate, checkOutDate, totalPrice, paymentMethod } = req.body;
+      const { roomId, customerName, customerEmail, customerPhone, checkInDate, checkOutDate, totalPrice, paymentMethod, promoCode, pointsRedeemed } = req.body;
       if (!roomId || !customerName || !customerEmail || !customerPhone || !checkInDate || !checkOutDate || !paymentMethod) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
       }
       const room = await getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
       if (!room) return res.status(404).json({ success: false, message: 'Room not found' });
+
+      // Handle promo code usage increment if applied
+      if (promoCode) {
+        await runAsync('UPDATE promo_codes SET usedCount = usedCount + 1 WHERE code = ?', [promoCode.toUpperCase()]);
+      }
+
       const confirmationNumber = 'BOOK' + Date.now().toString().slice(-8);
       const result = await runAsync('INSERT INTO reservations (roomId, userId, status, checkInDate, checkOutDate, customerEmail, confirmationNumber, totalPrice, paymentMethod, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [roomId, null, 'Confirmed', checkInDate, checkOutDate, customerEmail, confirmationNumber, totalPrice, paymentMethod, new Date().toISOString()]);
       const reservation = await getAsync('SELECT * FROM reservations WHERE id = ?', [result.lastID]);
@@ -771,8 +781,52 @@ app.post('/api/customer/bookings', (req, res) => {
         const p = await runAsync('INSERT INTO payments (reservationId, confirmationNumber, amount, status, method, transactionId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)', [reservation.id, confirmationNumber, totalPrice, 'Completed', 'Online', txnId, new Date().toISOString()]);
         paymentRecord = await getAsync('SELECT * FROM payments WHERE id = ?', [p.lastID]);
       }
-      await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', ['Customer Booking Created', `Booking ${confirmationNumber} for ${customerName}`, new Date().toISOString()]);
-      res.json({ success: true, message: 'Booking created successfully', confirmation: confirmationNumber, reservation, payment: paymentRecord });
+
+      // Handle Loyalty points earning & redemption if customer is a loyalty member
+      let loyaltySummary = null;
+      const member = await getAsync('SELECT * FROM loyalty_members WHERE LOWER(customerEmail) = LOWER(?)', [customerEmail]);
+      if (member) {
+        let currentPoints = member.pointsBalance;
+        let redeemedPts = parseInt(pointsRedeemed, 10) || 0;
+        if (redeemedPts > 0 && redeemedPts <= currentPoints) {
+          currentPoints -= redeemedPts;
+          await runAsync(
+            'INSERT INTO loyalty_transactions (memberId, type, points, description, createdAt) VALUES (?, ?, ?, ?, ?)',
+            [member.id, 'Redeemed', redeemedPts, `Redeemed on booking ${confirmationNumber}`, new Date().toISOString()]
+          );
+        }
+
+        const pointsEarned = loyaltyRewards.calculatePointsEarned(totalPrice, member.tier);
+        currentPoints += pointsEarned;
+        const newTotalSpent = (member.totalSpent || 0) + parseFloat(totalPrice);
+        const newTier = loyaltyRewards.calculateTier(newTotalSpent);
+
+        await runAsync(
+          'UPDATE loyalty_members SET pointsBalance = ?, totalSpent = ?, tier = ? WHERE id = ?',
+          [currentPoints, newTotalSpent, newTier, member.id]
+        );
+        await runAsync(
+          'INSERT INTO loyalty_transactions (memberId, type, points, description, createdAt) VALUES (?, ?, ?, ?, ?)',
+          [member.id, 'Earned', pointsEarned, `Earned from booking ${confirmationNumber}`, new Date().toISOString()]
+        );
+
+        loyaltySummary = {
+          pointsEarned,
+          pointsRedeemed: redeemedPts,
+          newBalance: currentPoints,
+          tier: newTier
+        };
+      }
+
+      await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', ['Customer Booking Created', `Booking ${confirmationNumber} for ${customerName} ($${totalPrice})`, new Date().toISOString()]);
+      res.json({
+        success: true,
+        message: 'Booking created successfully',
+        confirmation: confirmationNumber,
+        reservation,
+        payment: paymentRecord,
+        loyalty: loyaltySummary
+      });
     } catch (err) {
       console.error('Error creating customer booking:', err);
       res.status(500).json({ success: false, message: 'Failed to create booking' });
@@ -991,6 +1045,207 @@ app.get('/api/customer/reviews', async (req, res) => {
   } catch (err) {
     console.error('Error fetching guest reviews:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch guest reviews' });
+  }
+});
+
+// ========== FEATURE 9: PROMOTIONS & LOYALTY REWARDS ==========
+
+// Validate promotional code against an order subtotal
+app.post('/api/promotions/validate', async (req, res) => {
+  try {
+    const { code, subtotal } = req.body;
+    if (!code) {
+      return res.status(400).json({ success: false, message: 'Promo code is required' });
+    }
+
+    const promo = await getAsync('SELECT * FROM promo_codes WHERE UPPER(code) = UPPER(?)', [code.trim()]);
+    if (!promo) {
+      return res.status(404).json({ success: false, message: 'Promotional code not found' });
+    }
+
+    const result = promotionEngine.applyPromotion(promo, subtotal);
+    if (!result.valid) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+
+    res.json({
+      success: true,
+      promo: {
+        code: promo.code,
+        description: promo.description,
+        discountType: promo.discountType,
+        discountValue: promo.discountValue
+      },
+      calculation: result
+    });
+  } catch (err) {
+    console.error('Error validating promo code:', err);
+    res.status(500).json({ success: false, message: 'Failed to validate promotional code' });
+  }
+});
+
+// List all promotional codes (staff/admin)
+app.get('/api/promotions', verifyAuthToken, requireRole(['admin', 'manager', 'staff']), async (req, res) => {
+  try {
+    const promos = await allAsync('SELECT * FROM promo_codes ORDER BY id DESC');
+    res.json({ success: true, promotions: promos });
+  } catch (err) {
+    console.error('Error fetching promotions:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch promotional codes' });
+  }
+});
+
+// Create new promotional code (admin/manager)
+app.post('/api/promotions', verifyAuthToken, requireRole(['admin', 'manager']), async (req, res) => {
+  try {
+    const { code, description, discountType, discountValue, minSpend, maxUses, validUntil } = req.body;
+    if (!code || !discountType || discountValue === undefined) {
+      return res.status(400).json({ success: false, message: 'Code, discountType, and discountValue are required' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const existing = await getAsync('SELECT id FROM promo_codes WHERE code = ?', [cleanCode]);
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Promotion code already exists' });
+    }
+
+    const result = await runAsync(
+      'INSERT INTO promo_codes (code, description, discountType, discountValue, minSpend, maxUses, usedCount, validUntil, isActive, createdAt) VALUES (?, ?, ?, ?, ?, ?, 0, ?, 1, ?)',
+      [
+        cleanCode,
+        description || '',
+        discountType,
+        parseFloat(discountValue) || 0,
+        parseFloat(minSpend) || 0,
+        parseInt(maxUses, 10) || null,
+        validUntil || null,
+        new Date().toISOString()
+      ]
+    );
+
+    await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+      'Promotion Created',
+      `Promo code ${cleanCode} (${discountType} ${discountValue}) created`,
+      new Date().toISOString()
+    ]);
+
+    const createdPromo = await getAsync('SELECT * FROM promo_codes WHERE id = ?', [result.lastID]);
+    res.json({ success: true, message: 'Promotion created successfully', promo: createdPromo });
+  } catch (err) {
+    console.error('Error creating promotion:', err);
+    res.status(500).json({ success: false, message: 'Failed to create promotion' });
+  }
+});
+
+// Toggle promotional code active status
+app.put('/api/promotions/:id/status', verifyAuthToken, requireRole(['admin', 'manager']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    const promo = await getAsync('SELECT * FROM promo_codes WHERE id = ?', [id]);
+    if (!promo) return res.status(404).json({ success: false, message: 'Promotion not found' });
+
+    const activeVal = isActive ? 1 : 0;
+    await runAsync('UPDATE promo_codes SET isActive = ? WHERE id = ?', [activeVal, id]);
+
+    const updated = await getAsync('SELECT * FROM promo_codes WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Promotion status updated', promo: updated });
+  } catch (err) {
+    console.error('Error updating promotion status:', err);
+    res.status(500).json({ success: false, message: 'Failed to update promotion status' });
+  }
+});
+
+// Get Loyalty member profile and point history by email
+app.get('/api/loyalty/profile', async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ success: false, message: 'Email query param is required' });
+
+    const member = await getAsync('SELECT * FROM loyalty_members WHERE LOWER(customerEmail) = LOWER(?)', [email]);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Loyalty profile not found for this email' });
+    }
+
+    const transactions = await allAsync('SELECT * FROM loyalty_transactions WHERE memberId = ? ORDER BY id DESC LIMIT 20', [member.id]);
+    res.json({
+      success: true,
+      member,
+      transactions,
+      redemptionDollarValue: loyaltyRewards.pointsToDiscount(member.pointsBalance)
+    });
+  } catch (err) {
+    console.error('Error fetching loyalty profile:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch loyalty profile' });
+  }
+});
+
+// Register guest into loyalty rewards program
+app.post('/api/loyalty/register', async (req, res) => {
+  try {
+    const { customerEmail, customerName } = req.body;
+    if (!customerEmail || !customerName) {
+      return res.status(400).json({ success: false, message: 'customerEmail and customerName are required' });
+    }
+
+    const existing = await getAsync('SELECT * FROM loyalty_members WHERE LOWER(customerEmail) = LOWER(?)', [customerEmail]);
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Email already registered in loyalty program', member: existing });
+    }
+
+    // Welcome bonus 100 points
+    const welcomePoints = 100;
+    const result = await runAsync(
+      'INSERT INTO loyalty_members (customerEmail, customerName, pointsBalance, tier, totalSpent, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+      [customerEmail, customerName, welcomePoints, 'Silver', 0, new Date().toISOString()]
+    );
+
+    await runAsync(
+      'INSERT INTO loyalty_transactions (memberId, type, points, description, createdAt) VALUES (?, ?, ?, ?, ?)',
+      [result.lastID, 'Earned', welcomePoints, 'Welcome bonus points', new Date().toISOString()]
+    );
+
+    await runAsync('INSERT INTO auditLogs (action, details, timestamp) VALUES (?, ?, ?)', [
+      'Loyalty Member Registered',
+      `Member registered: ${customerName} (${customerEmail})`,
+      new Date().toISOString()
+    ]);
+
+    const member = await getAsync('SELECT * FROM loyalty_members WHERE id = ?', [result.lastID]);
+    res.json({ success: true, message: 'Successfully enrolled in Loyalty Rewards!', member });
+  } catch (err) {
+    console.error('Error registering loyalty member:', err);
+    res.status(500).json({ success: false, message: 'Failed to register loyalty member' });
+  }
+});
+
+// Validate points redemption for booking discount
+app.post('/api/loyalty/redeem', async (req, res) => {
+  try {
+    const { email, points, bookingTotal } = req.body;
+    if (!email || points === undefined || bookingTotal === undefined) {
+      return res.status(400).json({ success: false, message: 'Email, points, and bookingTotal are required' });
+    }
+
+    const member = await getAsync('SELECT * FROM loyalty_members WHERE LOWER(customerEmail) = LOWER(?)', [email]);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Loyalty member not found' });
+    }
+
+    const validation = loyaltyRewards.validateRedemption(member.pointsBalance, points, bookingTotal);
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, message: validation.message });
+    }
+
+    res.json({
+      success: true,
+      message: `${points} points can be redeemed for $${validation.discountAmount.toFixed(2)} discount`,
+      redemption: validation
+    });
+  } catch (err) {
+    console.error('Error redeeming loyalty points:', err);
+    res.status(500).json({ success: false, message: 'Failed to validate point redemption' });
   }
 });
 

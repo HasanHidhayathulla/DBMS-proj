@@ -815,6 +815,127 @@ function testDatabaseRecovery() {
     });
 }
 
+// Feature 9: Promotions & Loyalty UI Functions
+
+async function loadPromotions() {
+    try {
+        const data = await apiCall('/promotions');
+        const list = document.getElementById('promotions-list');
+        if (!list) return;
+        list.innerHTML = '';
+        if (data && data.success && data.promotions) {
+            data.promotions.forEach(p => {
+                const tr = document.createElement('tr');
+                const valDisplay = p.discountType === 'percentage' ? `${p.discountValue}%` : `$${parseFloat(p.discountValue).toFixed(2)}`;
+                const usage = `${p.usedCount || 0}${p.maxUses ? ' / ' + p.maxUses : ''}`;
+                const statusBadge = p.isActive ? '<span class="status-badge status-available">Active</span>' : '<span class="status-badge status-cancelled">Inactive</span>';
+                const toggleBtn = p.isActive
+                    ? `<button class="btn btn-danger" onclick="togglePromoStatus(${p.id}, false)">Deactivate</button>`
+                    : `<button class="btn btn-success" onclick="togglePromoStatus(${p.id}, true)">Activate</button>`;
+
+                tr.innerHTML = `
+                    <td>${p.id}</td>
+                    <td><strong>${p.code}</strong></td>
+                    <td>${p.description || '-'}</td>
+                    <td>${p.discountType}</td>
+                    <td>${valDisplay}</td>
+                    <td>$${parseFloat(p.minSpend || 0).toFixed(2)}</td>
+                    <td>${usage}</td>
+                    <td>${statusBadge}</td>
+                    <td>${toggleBtn}</td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+    } catch (e) {
+        showMessage('Error loading promotions: ' + e.message, 'error');
+    }
+}
+
+async function createPromoCode(e) {
+    e.preventDefault();
+    const code = document.getElementById('promoCodeInput').value.trim();
+    const description = document.getElementById('promoDescInput').value.trim();
+    const discountType = document.getElementById('promoTypeSelect').value;
+    const discountValue = parseFloat(document.getElementById('promoValueInput').value);
+    const minSpend = parseFloat(document.getElementById('promoMinSpendInput').value) || 0;
+    const maxUses = parseInt(document.getElementById('promoMaxUsesInput').value, 10) || null;
+
+    try {
+        const data = await apiCall('/promotions', 'POST', {
+            code,
+            description,
+            discountType,
+            discountValue,
+            minSpend,
+            maxUses
+        });
+        if (data && data.success) {
+            showMessage(`Promotion code ${data.promo.code} created successfully`, 'success');
+            document.getElementById('promoCodeInput').value = '';
+            document.getElementById('promoDescInput').value = '';
+            document.getElementById('promoValueInput').value = '';
+            document.getElementById('promoMinSpendInput').value = '0';
+            document.getElementById('promoMaxUsesInput').value = '';
+            loadPromotions();
+        } else {
+            showMessage(data?.message || 'Failed to create promotion', 'error');
+        }
+    } catch (err) {
+        showMessage('Error creating promotion: ' + err.message, 'error');
+    }
+}
+
+async function togglePromoStatus(id, isActive) {
+    try {
+        const data = await apiCall(`/promotions/${id}/status`, 'PUT', { isActive });
+        if (data && data.success) {
+            showMessage(`Promotion status updated`, 'success');
+            loadPromotions();
+        } else {
+            showMessage(data?.message || 'Failed to update status', 'error');
+        }
+    } catch (e) {
+        showMessage('Error updating status: ' + e.message, 'error');
+    }
+}
+
+async function searchLoyaltyMember(e) {
+    e.preventDefault();
+    const email = document.getElementById('adminLoyaltyEmail').value.trim();
+    const resDiv = document.getElementById('admin-loyalty-result');
+    resDiv.innerHTML = '<p>Searching...</p>';
+
+    try {
+        const data = await apiCall(`/loyalty/profile?email=${encodeURIComponent(email)}`);
+        if (data && data.success) {
+            const m = data.member;
+            let txHtml = '';
+            if (data.transactions && data.transactions.length > 0) {
+                txHtml = `
+                    <h5>Recent Transactions:</h5>
+                    <ul style="font-size: 13px;">
+                        ${data.transactions.map(t => `<li>[${t.type}] ${t.points} pts - ${t.description} (${new Date(t.createdAt).toLocaleDateString()})</li>`).join('')}
+                    </ul>
+                `;
+            }
+            resDiv.innerHTML = `
+                <div class="card" style="margin-top: 10px;">
+                    <h4>${m.customerName} &bull; <span class="status-badge status-confirmed">${m.tier} Member</span></h4>
+                    <p><strong>Email:</strong> ${m.customerEmail}</p>
+                    <p><strong>Points Balance:</strong> ${m.pointsBalance} pts (Cash Value: $${data.redemptionDollarValue.toFixed(2)})</p>
+                    <p><strong>Total Lifetime Spend:</strong> $${parseFloat(m.totalSpent || 0).toFixed(2)}</p>
+                    ${txHtml}
+                </div>
+            `;
+        } else {
+            resDiv.innerHTML = `<p style="color: red;">${data?.message || 'Member not found'}</p>`;
+        }
+    } catch (err) {
+        resDiv.innerHTML = `<p style="color: red;">Member not found or error occurred</p>`;
+    }
+}
+
 // Load initial data when page loads
 window.addEventListener('load', () => {
     if (!loadSessionFromStorage()) {
@@ -828,6 +949,7 @@ window.addEventListener('load', () => {
                 loadHousekeepingTasks();
                 loadServiceRequests();
                 loadGuestReviews();
+                loadPromotions();
             } else {
                 switchTab('login');
             }
@@ -839,5 +961,6 @@ window.addEventListener('load', () => {
         loadHousekeepingTasks();
         loadServiceRequests();
         loadGuestReviews();
+        loadPromotions();
     }
 });

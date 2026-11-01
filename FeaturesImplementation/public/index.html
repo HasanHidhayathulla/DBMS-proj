@@ -25,6 +25,7 @@
             <button class="nav-btn" onclick="switchTab('housekeeping')">Housekeeping</button>
             <button class="nav-btn" onclick="switchTab('billing')">Billing</button>
             <button class="nav-btn" onclick="switchTab('guest-services')">Guest Services & Housekeeping</button>
+            <button class="nav-btn" onclick="switchTab('promotions')">Promotions & Loyalty</button>
             <button class="nav-btn" onclick="switchTab('reporting')">Reports</button>
             <button class="nav-btn" onclick="switchTab('security')">Security</button>
             <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
@@ -426,6 +427,57 @@
                         </thead>
                         <tbody id="guest-reviews-list"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- PROMOTIONS & LOYALTY TAB (FEATURE 9) -->
+            <div id="promotions" class="tab-content">
+                <h2>Promotions & Loyalty Management</h2>
+
+                <div class="form-section">
+                    <h3>Create New Promotional Code</h3>
+                    <form onsubmit="createPromoCode(event)">
+                        <input type="text" id="promoCodeInput" placeholder="Code (e.g., WINTER25)" required style="text-transform: uppercase;">
+                        <input type="text" id="promoDescInput" placeholder="Description (e.g., 25% off winter special)">
+                        <select id="promoTypeSelect" required>
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed Dollar ($)</option>
+                        </select>
+                        <input type="number" id="promoValueInput" placeholder="Discount Value" step="0.01" required>
+                        <input type="number" id="promoMinSpendInput" placeholder="Min Spend ($)" step="0.01" value="0">
+                        <input type="number" id="promoMaxUsesInput" placeholder="Max Uses (optional)">
+                        <button type="submit" class="btn btn-success">Create Promo</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Active Promotional Codes</h3>
+                    <button onclick="loadPromotions()" class="btn btn-primary">Refresh Promotions</button>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th>Type</th>
+                                <th>Value</th>
+                                <th>Min Spend</th>
+                                <th>Usage</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promotions-list"></tbody>
+                    </table>
+                </div>
+
+                <div class="form-section">
+                    <h3>Lookup Loyalty Member</h3>
+                    <form onsubmit="searchLoyaltyMember(event)">
+                        <input type="email" id="adminLoyaltyEmail" placeholder="Guest Email Address" required>
+                        <button type="submit" class="btn btn-primary">Lookup Member</button>
+                    </form>
+                    <div id="admin-loyalty-result" style="margin-top: 15px;"></div>
                 </div>
             </div>
 

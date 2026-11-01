@@ -35,13 +35,33 @@ function init() {
     `CREATE TABLE IF NOT EXISTS housekeeping_tasks (id INTEGER PRIMARY KEY, roomId INTEGER, taskType TEXT, priority TEXT, status TEXT, assignedTo TEXT, notes TEXT, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS guest_reviews (id INTEGER PRIMARY KEY, confirmationNumber TEXT, rating INTEGER, comment TEXT, createdAt TEXT);`,
     `CREATE TABLE IF NOT EXISTS housekeepingTasks (id INTEGER PRIMARY KEY, roomId INTEGER, assignedTo TEXT, taskType TEXT, priority TEXT, status TEXT, notes TEXT, createdAt TEXT, completedAt TEXT);`,
-    `CREATE TABLE IF NOT EXISTS maintenanceRequests (id INTEGER PRIMARY KEY, roomId INTEGER, reportedBy TEXT, issueCategory TEXT, description TEXT, priority TEXT, status TEXT, resolutionNotes TEXT, createdAt TEXT, resolvedAt TEXT);`
+    `CREATE TABLE IF NOT EXISTS maintenanceRequests (id INTEGER PRIMARY KEY, roomId INTEGER, reportedBy TEXT, issueCategory TEXT, description TEXT, priority TEXT, status TEXT, resolutionNotes TEXT, createdAt TEXT, resolvedAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS promo_codes (id INTEGER PRIMARY KEY, code TEXT UNIQUE, description TEXT, discountType TEXT, discountValue REAL, minSpend REAL, maxUses INTEGER, usedCount INTEGER DEFAULT 0, validFrom TEXT, validUntil TEXT, isActive INTEGER DEFAULT 1, createdAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS loyalty_members (id INTEGER PRIMARY KEY, customerEmail TEXT UNIQUE, customerName TEXT, pointsBalance INTEGER DEFAULT 0, tier TEXT DEFAULT 'Silver', totalSpent REAL DEFAULT 0, createdAt TEXT);`,
+    `CREATE TABLE IF NOT EXISTS loyalty_transactions (id INTEGER PRIMARY KEY, memberId INTEGER, type TEXT, points INTEGER, description TEXT, createdAt TEXT);`
   ];
 
   db.serialize(() => {
     queries.forEach(q => db.run(q, (err) => {
       if (err) console.error('Error creating table:', err.message);
     }));
+
+    // Seed default promotional codes
+    const defaultPromos = [
+      { code: 'WELCOME10', description: '10% off for new guests', discountType: 'percentage', discountValue: 10, minSpend: 50, maxUses: 1000 },
+      { code: 'SUMMER50', description: '$50 off bookings over $200', discountType: 'fixed', discountValue: 50, minSpend: 200, maxUses: 500 },
+      { code: 'LUXURY20', description: '20% off luxury stays over $500', discountType: 'percentage', discountValue: 20, minSpend: 500, maxUses: 250 }
+    ];
+
+    defaultPromos.forEach(promo => {
+      db.run(
+        'INSERT OR IGNORE INTO promo_codes (code, description, discountType, discountValue, minSpend, maxUses, usedCount, isActive, createdAt) VALUES (?, ?, ?, ?, ?, ?, 0, 1, ?)',
+        [promo.code, promo.description, promo.discountType, promo.discountValue, promo.minSpend, promo.maxUses, new Date().toISOString()],
+        (err) => {
+          if (err) console.error('Error seeding promo code:', err.message);
+        }
+      );
+    });
 
     // Insert default users if they don't exist
     const defaultUsers = [
