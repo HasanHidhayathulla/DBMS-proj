@@ -16,6 +16,7 @@ FeaturesImplementation/
 ├── Feature8_GuestServices/      # Guest add-on services, housekeeping & reviews
 ├── Feature8_Housekeeping/       # Housekeeping & room maintenance
 ├── Feature9_PromotionsAndLoyalty/# Promotional codes and guest loyalty rewards
+├── Feature9_LoyaltyDiscounts/   # Guest loyalty, promo codes & discounts
 ├── Shared/                      # Shared database models
 ├── api/                         # Backend API server
 ├── public/                      # Frontend HTML/CSS/JS
@@ -200,6 +201,14 @@ http://localhost:3000
 - `GET /api/loyalty/profile` - Lookup guest loyalty account, points balance, and tier status
 - `POST /api/loyalty/register` - Enroll a customer in loyalty rewards program
 - `POST /api/loyalty/redeem` - Redeem loyalty points for reservation discounts
+### Loyalty, Promo & Discount System (Feature 9)
+
+- `GET /api/loyalty/profile?email=...` - Look up guest loyalty tier, points, and history
+- `POST /api/loyalty/redeem` - Calculate discount for points redemption
+- `GET /api/loyalty/members` - List all loyalty members and tier statuses (Admin/Manager)
+- `POST /api/promo/validate` - Validate coupon/promo code and compute applied discount
+- `GET /api/promo` - List active promotional campaigns
+- `POST /api/promo` - Create new promo code with percentage or flat discount (Admin/Manager)
 
 ## Database Models
 
@@ -214,9 +223,12 @@ http://localhost:3000
 - **PromoCode**
 - **LoyaltyMember**
 - **LoyaltyTransaction**
+- **LoyaltyMember**
+- **LoyaltyTransaction**
+- **PromoCode**
 
 ---
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 **Last Updated**: July 21, 2026
 **Status**: Production Ready

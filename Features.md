@@ -77,3 +77,11 @@ This feature bridges traditional hospitality marketing, guest retention, and rev
 - **ToDo: Guest Loyalty Tier & Points Accumulation:** Implement loyalty membership accounts with points accumulation (10 pts/dollar) with tier-based bonuses (Silver, Gold, Platinum).
 - **ToDo: Reward Points Redemption Flow:** Allow guests to redeem earned points as instant cash deductions on room reservations.
 - **ToDo: Promotional Campaign Management Interface:** Provide administrative tools for hotel managers to create, monitor usage, and toggle active promotions.
+### Feature 9: Guest Loyalty, Promotional Campaigns & Membership Discounts
+
+This feature manages customer retention, promotional pricing strategies, and loyalty rewards common in modern hotel operations.
+
+- **ToDo: Loyalty Membership & Tier Progression:** Auto-register guests into Bronze, Silver, Gold, and Platinum loyalty tiers based on lifetime spend and booking history.
+- **ToDo: Points Accrual & Redemption Engine:** Award reward points per dollar spent based on active tier multipliers, and allow guests to redeem points for cash deductions at checkout.
+- **ToDo: Promotional Discount Engine:** Validate discount codes (Percentage and Flat Off), enforce minimum spend requirements, expiry dates, and campaign statuses.
+- **ToDo: Integrated Booking Checkout & Admin Management:** Enable online customers to apply coupons and points seamlessly during booking, while allowing hotel managers to run and monitor promo campaigns.
